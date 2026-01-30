@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presensi Guru - MTS TANUNTUNG</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         .glow-orange { box-shadow: 0 0 20px rgba(251, 146, 60, 0.6); border: 2px solid #fb923c; }
     </style>
@@ -21,16 +23,15 @@
         <div class="space-y-4">
             <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">MASUK</button>
+            <button id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">MASUK</button>
         </div>
     </div>
 
     <div id="timesheetSection" class="hidden max-w-5xl mx-auto space-y-6">
-        
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-white flex justify-between items-center">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border flex justify-between items-center">
             <button id="prevBtn" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">◀ Bulan Lalu</button>
             <div class="text-center">
-                <h2 id="displayMonthYear" class="text-2xl font-bold">Januari 2026</h2>
+                <h2 id="displayMonthYear" class="text-2xl font-bold"></h2>
                 <p id="schoolTitle" class="text-xs text-blue-600 font-bold tracking-widest uppercase"></p>
             </div>
             <button id="nextBtn" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Bulan Depan ▶</button>
@@ -51,7 +52,7 @@
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-sm border text-center">
                 <p id="statLibur" class="text-3xl font-bold text-blue-400">0</p>
-                <p class="text-[10px] text-slate-500 uppercase font-bold mt-1">Hari Libur</p>
+                <p class="text-[10px] text-slate-500 uppercase font-bold mt-1">Libur Sekolah</p>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-sm border text-center">
                 <p id="statPercent" class="text-3xl font-bold text-rose-500">0%</p>
@@ -59,26 +60,24 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl shadow-xl border border-white">
-            <div class="overflow-x-auto rounded-2xl border border-slate-100">
+        <div class="flex justify-end">
+            <button onclick="downloadPDFGuru()" class="bg-rose-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-rose-700 transition flex items-center gap-2">
+                <span>📄</span> Download Rekap Ceklok (PDF)
+            </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-xl border">
+            <div class="overflow-x-auto rounded-2xl border">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold">
-                        <tr>
-                            <th class="p-4">Tanggal</th>
-                            <th class="p-4 text-center">Jam Masuk</th>
-                            <th class="p-4 text-center">Jam Pulang</th>
-                            <th class="p-4">Keterangan</th>
-                            <th class="p-4 text-center">Aksi</th>
-                        </tr>
+                        <tr><th class="p-4">Tanggal</th><th class="p-4 text-center">Jam Masuk</th><th class="p-4 text-center">Jam Pulang</th><th class="p-4">Keterangan</th><th class="p-4 text-center">Aksi</th></tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="tableBody" class="divide-y"></tbody>
                 </table>
             </div>
-            <button id="btnSave" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition">
-                💾 Simpan Semua Perubahan
-            </button>
+            <button id="btnSave" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition">💾 Simpan Semua Perubahan</button>
             <div class="mt-4 flex justify-between px-2 text-[10px]">
-                <a id="adminLink" href="dashboard.html" class="hidden text-blue-500 font-bold">Dashboard Admin →</a>
+                <a id="adminLink" href="dashboard.html" class="hidden text-blue-500 font-bold uppercase">Dashboard Admin →</a>
                 <button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button>
             </div>
         </div>
@@ -107,8 +106,7 @@
         // --- VALIDASI & FORMAT JAM ---
         window.validateKey = (el) => { el.value = el.value.replace(/[^0-9.:, ]/g, ''); };
         window.formatTimeInput = (el) => {
-            let val = el.value.trim();
-            if (!val) return;
+            let val = el.value.trim(); if (!val) return;
             let parts = val.split(/[:., ]/);
             let h = (parts[0] || "0").padStart(2, '0').substring(0, 2);
             let m = (parts[1] || "0").padStart(2, '0').substring(0, 2);
@@ -133,7 +131,6 @@
             } else { alert("Login Gagal!"); }
         };
 
-        // --- RENDER & LOGIC ---
         function initApp() {
             const user = localStorage.getItem('user_ceklok');
             if(!user) return;
@@ -158,7 +155,6 @@
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             const daysInMonth = new Date(y, m + 1, 0).getDate();
-            
             let stats = { work: 0, hadir: 0, libur: 0 };
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -195,14 +191,37 @@
             document.getElementById('statPercent').innerText = s.work > 0 ? Math.round((s.hadir / (s.work - s.libur)) * 100) + "%" : "0%";
         }
 
+        window.downloadPDFGuru = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const user = localStorage.getItem('nama_guru');
+            const sekolah = JSON.parse(localStorage.getItem('sekolah'))[0];
+            const bulan = document.getElementById('displayMonthYear').innerText;
+
+            doc.setFontSize(16); doc.text("LAPORAN DETAIL ABSENSI GURU", 105, 15, { align: "center" });
+            doc.setFontSize(10); doc.text(`Sekolah: ${sekolah}`, 15, 25);
+            doc.text(`Nama: ${user}`, 15, 30); doc.text(`Periode: ${bulan}`, 15, 35);
+
+            const rows = [];
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                const masuk = tr.querySelector('.row-m').value;
+                const pulang = tr.querySelector('.row-p').value;
+                const ket = tr.querySelector('.row-k').value;
+                if(masuk || pulang || ket !== "Hadir") {
+                    rows.push([cells[0].innerText.split(' ')[0], masuk || '-', pulang || '-', ket]);
+                }
+            });
+
+            doc.autoTable({ startY: 40, head: [['Tgl', 'Masuk', 'Pulang', 'Keterangan']], body: rows, theme: 'grid', headStyles: { fillColor: [30, 41, 59] } });
+            doc.save(`Absensi_${user}_${bulan}.pdf`);
+        };
+
         window.saveAll = async () => {
             toggleLoading(true);
             const rows = document.querySelectorAll('#tableBody tr');
             for(let tr of rows) {
-                const date = tr.querySelector('.row-d').value;
-                const m = tr.querySelector('.row-m').value;
-                const p = tr.querySelector('.row-p').value;
-                const k = tr.querySelector('.row-k').value;
+                const date = tr.querySelector('.row-d').value, m = tr.querySelector('.row-m').value, p = tr.querySelector('.row-p').value, k = tr.querySelector('.row-k').value;
                 if(m || p || k !== "Hadir") {
                     await setDoc(doc(db, "presensi", `${localStorage.getItem('user_ceklok')}_${date}`), {
                         username: localStorage.getItem('user_ceklok'), nama: localStorage.getItem('nama_guru'), 
