@@ -3,178 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Presensi Guru</title>
+    <title>Admin Dashboard Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-100 min-h-screen">
 
-    <nav class="bg-blue-700 text-white p-4 shadow-lg">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-xl font-bold tracking-wider">PANEL ADMIN</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <span id="adminName" class="text-sm border-r pr-4">Memuat...</span>
-                <button onclick="location.href='index.html'" class="text-sm bg-blue-600 hover:bg-blue-800 px-3 py-1 rounded transition">Ke Halaman Ceklok</button>
-                <button onclick="handleLogout()" class="text-sm bg-red-500 hover:bg-red-600 px-3 py-1 rounded transition">Logout</button>
-            </div>
+    <nav class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center px-8">
+        <h1 class="font-bold text-xl">ADMIN PANEL</h1>
+        <div class="flex gap-4 items-center">
+            <button onclick="switchTab('presensi')" class="hover:underline">Presensi</button>
+            <button onclick="switchTab('users')" class="hover:underline">Kelola Guru</button>
+            <button onclick="handleLogout()" class="bg-red-500 px-3 py-1 rounded text-sm">Logout</button>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-6">
+    <div class="max-w-7xl mx-auto p-6">
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <p class="text-slate-500 text-sm font-medium">Total Presensi (Bulan Ini)</p>
-                <h2 id="statTotal" class="text-3xl font-bold text-slate-800">0</h2>
+        <div id="tabPresensi">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Data Presensi Guru</h2>
+                <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm">Export Excel</button>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                <p class="text-slate-500 text-sm font-medium">Hadir Hari Ini (Masuk)</p>
-                <h2 id="statToday" class="text-3xl font-bold text-slate-800">0</h2>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
-                <p class="text-slate-500 text-sm font-medium">Sekolah Aktif</p>
-                <h2 id="statSchool" class="text-3xl font-bold text-slate-800">0</h2>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-t-xl shadow-sm flex flex-wrap gap-4 items-center justify-between border-b">
-            <div class="flex gap-2">
-                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari nama guru atau sekolah..." class="px-4 py-2 border rounded-lg text-sm w-64 outline-none focus:ring-2 focus:ring-blue-500">
-                <select id="filterJenis" onchange="filterTable()" class="px-4 py-2 border rounded-lg text-sm outline-none">
-                    <option value="">Semua Status</option>
-                    <option value="Masuk">Masuk</option>
-                    <option value="Pulang">Pulang</option>
-                </select>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="fetchData()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition">🔄 Refresh</button>
-                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">📥 Export Excel</button>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-b-xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table id="presensiTable" class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
-                            <th class="p-4 border-b font-semibold">Waktu Sistem</th>
-                            <th class="p-4 border-b font-semibold">Nama Guru</th>
-                            <th class="p-4 border-b font-semibold">Sekolah</th>
-                            <th class="p-4 border-b font-semibold">Status</th>
-                            <th class="p-4 border-b font-semibold">Jam Manual</th>
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="p-4">Waktu</th><th class="p-4">Nama Guru</th><th class="p-4">Sekolah</th><th class="p-4">Status</th><th class="p-4">Jam</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="text-sm text-slate-700 divide-y divide-slate-100">
-                        </tbody>
+                    <tbody id="tablePresensi" class="text-sm divide-y"></tbody>
                 </table>
             </div>
-            <div id="noData" class="hidden p-10 text-center text-slate-400">Data tidak ditemukan.</div>
         </div>
-    </main>
 
-    <div id="loader" class="fixed inset-0 bg-white/70 flex flex-col items-center justify-center z-50">
-        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-        <p class="mt-4 text-slate-600 font-medium italic">Mengambil data dari Google Sheets...</p>
+        <div id="tabUsers" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Daftar Guru & Staff</h2>
+                <button onclick="toggleModal(true)" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm">+ Tambah Akun</button>
+            </div>
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="p-4">Username</th><th class="p-4">Nama Lengkap</th><th class="p-4">Role</th><th class="p-4">Sekolah</th><th class="p-4">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableUsers" class="text-sm divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalUser" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="font-bold text-lg mb-4">Tambah Pengguna Baru</h3>
+            <div class="space-y-3">
+                <input type="text" id="newUsername" placeholder="Username (NIP)" class="w-full p-2 border rounded">
+                <input type="password" id="newPassword" placeholder="Password" class="w-full p-2 border rounded">
+                <input type="text" id="newNama" placeholder="Nama Lengkap" class="w-full p-2 border rounded">
+                <select id="newRole" class="w-full p-2 border rounded">
+                    <option value="Guru">Guru</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                </select>
+                <input type="text" id="newSekolah" placeholder="Nama Sekolah (pisahkan koma jika > 1)" class="w-full p-2 border rounded">
+                <div class="flex gap-2 pt-4">
+                    <button onclick="saveUser()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Simpan</button>
+                    <button onclick="toggleModal(false)" class="flex-1 bg-slate-200 py-2 rounded">Batal</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec";
-        let rawData = [];
-
-        // Proteksi Halaman: Hanya Admin/Staff yang boleh masuk
-        window.onload = () => {
-            const role = localStorage.getItem('role');
-            if (role !== 'Admin' && role !== 'Staff') {
-                alert("Akses Ditolak! Anda bukan Admin.");
-                window.location.href = 'index.html';
-                return;
-            }
-            document.getElementById('adminName').innerText = localStorage.getItem('nama_guru');
-            fetchData();
-        };
+        let logsData = [];
 
         async function fetchData() {
-            document.getElementById('loader').style.display = 'flex';
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'adminGetData' })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    rawData = result.data.slice(1); // Buang header
-                    renderTable(rawData);
-                    updateStats(rawData);
-                }
-            } catch (e) {
-                alert("Gagal mengambil data database.");
-            } finally {
-                document.getElementById('loader').style.display = 'none';
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminGetData' }) });
+            const result = await resp.json();
+            if(result.success) {
+                logsData = result.data.slice(1);
+                renderPresensi(logsData);
+                renderUsers(result.users.slice(1));
             }
         }
 
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = data.map(row => `
-                <tr class="hover:bg-blue-50/50 transition duration-150">
-                    <td class="p-4 text-xs text-slate-500">${new Date(row[0]).toLocaleString('id-ID')}</td>
-                    <td class="p-4 font-bold text-slate-800">${row[2]}</td>
-                    <td class="p-4 text-slate-600">${row[3]}</td>
-                    <td class="p-4">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${row[4] === 'Masuk' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}">
-                            ${row[4]}
-                        </span>
-                    </td>
-                    <td class="p-4 font-mono font-bold text-blue-600">${row[5]}</td>
+        function renderPresensi(data) {
+            document.getElementById('tablePresensi').innerHTML = data.reverse().map(r => `
+                <tr>
+                    <td class="p-4 text-xs">${new Date(r[0]).toLocaleString()}</td>
+                    <td class="p-4 font-bold">${r[2]}</td>
+                    <td class="p-4">${r[3]}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs ${r[4]=='Masuk'?'bg-green-100':'bg-orange-100'}">${r[4]}</span></td>
+                    <td class="p-4 font-mono">${r[5]}</td>
                 </tr>
-            `).reverse().join(''); // Reverse agar data terbaru di atas
+            `).join('');
         }
 
-        function updateStats(data) {
-            const today = new Date().toLocaleDateString('id-ID');
-            const uniqueSchools = new Set(data.map(r => r[3]));
-            const presentToday = data.filter(r => new Date(r[0]).toLocaleDateString('id-ID') === today && r[4] === 'Masuk');
-
-            document.getElementById('statTotal').innerText = data.length;
-            document.getElementById('statToday').innerText = presentToday.length;
-            document.getElementById('statSchool').innerText = uniqueSchools.size;
+        function renderUsers(users) {
+            document.getElementById('tableUsers').innerHTML = users.map(u => `
+                <tr>
+                    <td class="p-4">${u[0]}</td><td class="p-4 font-bold">${u[2]}</td><td class="p-4">${u[3]}</td><td class="p-4">${u[4]}</td>
+                    <td class="p-4"><button onclick="deleteUser('${u[0]}')" class="text-red-500 hover:underline">Hapus</button></td>
+                </tr>
+            `).join('');
         }
 
-        function filterTable() {
-            const s = document.getElementById('searchInput').value.toLowerCase();
-            const f = document.getElementById('filterJenis').value;
-            
-            const filtered = rawData.filter(row => {
-                const matchesSearch = row[2].toLowerCase().includes(s) || row[3].toLowerCase().includes(s);
-                const matchesJenis = f === "" || row[4] === f;
-                return matchesSearch && matchesJenis;
-            });
-
-            renderTable(filtered);
-            document.getElementById('noData').style.display = filtered.length ? 'none' : 'block';
+        async function saveUser() {
+            const data = {
+                action: 'addUser',
+                newUsername: document.getElementById('newUsername').value,
+                newPassword: document.getElementById('newPassword').value,
+                newNama: document.getElementById('newNama').value,
+                newRole: document.getElementById('newRole').value,
+                newSekolah: document.getElementById('newSekolah').value
+            };
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            alert("User Ditambahkan!");
+            location.reload();
         }
 
-        function exportToExcel() {
-            if (!rawData.length) return alert("Tidak ada data untuk di-export");
-            const worksheet = XLSX.utils.json_to_sheet(rawData.map(r => ({
-                "Waktu Input": new Date(r[0]).toLocaleString('id-ID'),
-                "Username": r[1],
-                "Nama Guru": r[2],
-                "Sekolah": r[3],
-                "Status": r[4],
-                "Jam Manual": r[5]
-            })));
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Presensi");
-            XLSX.writeFile(workbook, `Laporan_Presensi_Guru_${new Date().toLocaleDateString()}.xlsx`);
+        async function deleteUser(username) {
+            if(!confirm("Hapus user " + username + "?")) return;
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteUser', targetUser: username }) });
+            location.reload();
         }
 
-        function handleLogout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
+        function switchTab(tab) {
+            document.getElementById('tabPresensi').classList.toggle('hidden', tab !== 'presensi');
+            document.getElementById('tabUsers').classList.toggle('hidden', tab !== 'users');
         }
+
+        function toggleModal(show) { document.getElementById('modalUser').classList.toggle('hidden', !show); }
+        function handleLogout() { localStorage.clear(); location.href='index.html'; }
+        
+        window.onload = fetchData;
     </script>
 </body>
 </html>
