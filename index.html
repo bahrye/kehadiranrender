@@ -132,15 +132,11 @@
         let masterLogs = [];
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
-        // --- VALIDASI JAM PINTAR (HH:MM) ---
         window.handleTimeInput = (el) => {
-            // Simpan nilai lama untuk mendeteksi aksi hapus (backspace)
             if (el.lastValue === undefined) el.lastValue = "";
             const isDeleting = el.value.length < el.lastValue.length;
             let val = el.value;
         
-            // 1. Fitur Pintar: Deteksi "." atau ":" manual
-            // Contoh: Ketik "1." atau "1:" -> jadi "01:"
             if (!isDeleting && (val.endsWith('.') || val.endsWith(':'))) {
                 let numeric = val.replace(/[:.]/g, '');
                 if (numeric.length === 1) {
@@ -154,45 +150,35 @@
                 }
             }
         
-            // 2. Bersihkan input hanya angka
             let nums = val.replace(/\D/g, '');
             if (nums.length > 4) nums = nums.substring(0, 4);
         
             let validated = "";
-        
-            // Validasi Jam (00-23)
             if (nums.length >= 1) {
                 const d1 = parseInt(nums[0]);
-                if (d1 <= 2) validated += nums[0]; // Hanya terima 0, 1, 2 di digit pertama
+                if (d1 <= 2) validated += nums[0];
             }
-        
             if (nums.length >= 2 && validated.length === 1) {
                 const h = parseInt(validated + nums[1]);
-                if (h <= 23) validated += nums[1]; // Pastikan jam tidak lebih dari 23
+                if (h <= 23) validated += nums[1];
             }
-        
-            // Validasi Menit (00-59)
             if (nums.length >= 3 && validated.length === 2) {
                 const m1 = parseInt(nums[2]);
-                if (m1 <= 5) validated += nums[2]; // Menit puluhan hanya boleh 0-5
+                if (m1 <= 5) validated += nums[2];
             }
-        
             if (nums.length >= 4 && validated.length === 3) {
                 validated += nums[3];
             }
         
-            // 3. Output Format Otomatis
             let finalValue = validated;
             if (validated.length > 2) {
-                // Tambahkan titik dua di antara Jam dan Menit
                 finalValue = validated.substring(0, 2) + ":" + validated.substring(2);
             } else if (validated.length === 2 && !isDeleting) {
-                // Jika baru ketik 2 angka dan TIDAK sedang menghapus, tambah ":" otomatis
                 finalValue = validated + ":";
             }
         
             el.value = finalValue;
-            el.lastValue = finalValue; // Simpan untuk pengecekan berikutnya
+            el.lastValue = finalValue;
         };
         
         window.formatTimeBlur = (el) => {
@@ -205,21 +191,22 @@
             el.lastValue = el.value;
         };
 
-        // --- AUTH ---
         document.getElementById('btnLogin').onclick = async () => {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             toggleLoading(true);
-            const userDoc = await getDoc(doc(db, "users", user));
-            toggleLoading(false);
-            if (userDoc.exists() && userDoc.data().password === pass) {
-                const data = userDoc.data();
-                localStorage.setItem('user_ceklok', user);
-                localStorage.setItem('nama_guru', data.nama);
-                localStorage.setItem('role', data.role);
-                localStorage.setItem('sekolah', JSON.stringify(data.sekolah));
-                location.reload();
-            } else { alert("Login Gagal!"); }
+            try {
+                const userDoc = await getDoc(doc(db, "users", user));
+                toggleLoading(false);
+                if (userDoc.exists() && userDoc.data().password === pass) {
+                    const data = userDoc.data();
+                    localStorage.setItem('user_ceklok', user);
+                    localStorage.setItem('nama_guru', data.nama);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('sekolah', JSON.stringify(data.sekolah));
+                    location.reload();
+                } else { alert("Login Gagal!"); }
+            } catch (e) { toggleLoading(false); alert("Error Login!"); }
         };
 
         function initApp() {
@@ -242,7 +229,8 @@
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
             document.getElementById('displayMonthYear').innerText = `${monthNames[m]} ${y}`;
-            document.getElementById('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('sekolah'))[0];
+            const sekData = localStorage.getItem('sekolah');
+            document.getElementById('schoolTitle').innerText = sekData ? "UNIT: " + JSON.parse(sekData)[0] : "";
         
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -268,38 +256,25 @@
                             ${d} <span class="text-[10px] text-slate-400 font-medium">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span>
                         </td>
                         <td class="p-2 text-center">
-                            <input type="text" 
-                                placeholder="HH:MM" 
-                                onfocus="this.lastValue = this.value"
-                                oninput="handleTimeInput(this)" 
-                                onblur="formatTimeBlur(this)" 
-                                value="${log.masuk || ''}" 
-                                ${isSun || isOff ? 'disabled' : ''} 
+                            <input type="text" placeholder="HH:MM" onfocus="this.lastValue = this.value" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" 
+                                value="${log.masuk || ''}" ${isSun || isOff ? 'disabled' : ''} 
                                 class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
                         </td>
                         <td class="p-2 text-center">
-                            <input type="text" 
-                                placeholder="HH:MM" 
-                                onfocus="this.lastValue = this.value"
-                                oninput="handleTimeInput(this)" 
-                                onblur="formatTimeBlur(this)" 
-                                value="${log.masuk || ''}" 
-                                ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">                        </td>
+                            <input type="text" placeholder="HH:MM" onfocus="this.lastValue = this.value" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" 
+                                value="${log.pulang || ''}" ${isSun || isOff ? 'disabled' : ''} 
+                                class="row-p w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
+                        </td>
                         <td class="p-2">
-                            <select onchange="handleStatus(this)" 
-                                ${isSun ? 'disabled' : ''} 
+                            <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} 
                                 class="row-k w-full p-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
                                 <option value="Hadir">Hadir</option>
                                 ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}
                             </select>
                         </td>
                         <td class="p-2 text-center">
-                            <button onclick="clearRow(this)" 
-                                ${isSun ? 'disabled' : ''} 
-                                class="w-8 h-8 flex items-center justify-center mx-auto text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all font-bold text-lg">
-                                ×
-                            </button>
+                            <button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} 
+                                class="w-8 h-8 flex items-center justify-center mx-auto text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all font-bold text-lg">×</button>
                             <input type="hidden" class="row-d" value="${dateKey}">
                         </td>
                     </tr>`;
@@ -351,20 +326,17 @@
             const sekolahName = sekolahData ? JSON.parse(sekolahData)[0] : "";
         
             for (let tr of rows) {
-                // Ambil elemen input/select dengan aman
                 const elDate = tr.querySelector('.row-d');
                 const elMasuk = tr.querySelector('.row-m');
                 const elPulang = tr.querySelector('.row-p');
                 const elKet = tr.querySelector('.row-k');
         
-                // Validasi: Pastikan elemen-elemen tersebut ada di baris ini
                 if (elDate && elMasuk && elPulang && elKet) {
                     const date = elDate.value;
                     const m = elMasuk.value;
                     const p = elPulang.value;
                     const k = elKet.value;
         
-                    // Simpan hanya jika ada data jam atau keterangan bukan "Hadir"
                     if (m || p || k !== "Hadir") {
                         try {
                             await setDoc(doc(db, "presensi", `${userCeklok}_${date}`), {
