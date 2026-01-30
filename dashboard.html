@@ -3,30 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - MTS TANUNTUNG</title>
+    <title>Admin Dashboard - Firebase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
-    <nav class="bg-slate-900 text-white p-4 flex justify-between px-10 shadow-lg sticky top-0 z-50 font-bold">
-        <h1>ADMIN DASHBOARD</h1>
-        <div class="flex gap-6 text-sm">
-            <button onclick="switchTab('p')">Presensi</button>
-            <button onclick="switchTab('u')">User</button>
-            <button onclick="location.href='index.html'" class="text-blue-400 italic">← Ceklok</button>
+
+    <nav class="bg-slate-900 text-white p-4 flex justify-between px-10 shadow-lg sticky top-0 z-50">
+        <h1 class="font-bold tracking-tight text-xl">ADMIN <span class="text-blue-500">PANEL</span></h1>
+        <div class="flex gap-6 text-sm font-bold uppercase tracking-widest">
+            <button onclick="switchTab('p')">Logs</button>
+            <button onclick="switchTab('u')">Users</button>
+            <button onclick="location.href='index.html'" class="text-blue-400">← Form Ceklok</button>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-8">
         <div id="tabP">
             <div class="flex justify-between items-center mb-6 font-bold text-2xl text-slate-800">
-                <h2>Log Kehadiran</h2>
-                <button onclick="exportXLS()" class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-xl">Excel</button>
+                <h2>Log Kehadiran Guru</h2>
+                <button onclick="exportXLS()" class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-xl">Export Excel</button>
             </div>
             <div class="bg-white rounded-3xl shadow border overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-100 text-[10px] text-slate-500 uppercase">
-                        <tr><th class="p-4">Tanggal</th><th class="p-4">Guru</th><th class="p-4">Sekolah</th><th class="p-4 text-center">Masuk</th><th class="p-4 text-center">Pulang</th><th class="p-4">Status</th></tr>
+                    <thead class="bg-slate-100 text-[10px] font-bold text-slate-500 uppercase">
+                        <tr><th class="p-4">Tanggal</th><th class="p-4">Nama Guru</th><th class="p-4">Sekolah</th><th class="p-4 text-center">Masuk</th><th class="p-4 text-center">Pulang</th><th class="p-4">Ket</th></tr>
                     </thead>
                     <tbody id="bodyP" class="divide-y"></tbody>
                 </table>
@@ -34,14 +35,14 @@
         </div>
 
         <div id="tabU" class="hidden">
-            <div class="flex justify-between items-center mb-6 font-bold text-2xl">
-                <h2>Kelola Guru</h2>
-                <button onclick="id('mod').classList.remove('hidden')" class="text-sm bg-blue-600 text-white px-4 py-2 rounded-xl">+ Tambah Akun</button>
+            <div class="flex justify-between items-center mb-6 font-bold text-2xl text-slate-800">
+                <h2>Kelola Akun</h2>
+                <button onclick="document.getElementById('mod').classList.remove('hidden')" class="text-sm bg-blue-600 text-white px-4 py-2 rounded-xl">+ Tambah User</button>
             </div>
             <div class="bg-white rounded-3xl shadow border overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-100 text-[10px] uppercase text-slate-500">
-                        <tr><th class="p-4">Username</th><th class="p-4">Nama</th><th class="p-4">Role</th><th class="p-4">Sekolah</th><th class="p-4">Aksi</th></tr>
+                    <thead class="bg-slate-100 text-[10px] uppercase font-bold text-slate-500">
+                        <tr><th class="p-4">Username</th><th class="p-4">Nama</th><th class="p-4">Role</th><th class="p-4">Sekolah</th><th class="p-4 text-center">Aksi</th></tr>
                     </thead>
                     <tbody id="bodyU" class="divide-y"></tbody>
                 </table>
@@ -50,50 +51,70 @@
     </main>
 
     <div id="mod" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-sm">
-            <h3 class="font-bold text-xl mb-4">User Baru</h3>
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl">
+            <h3 class="font-bold text-xl mb-4">Buat Akun</h3>
             <div class="space-y-3">
-                <input id="nu" placeholder="User" class="w-full p-2 border rounded-xl"><input id="np" placeholder="Pass" class="w-full p-2 border rounded-xl"><input id="nn" placeholder="Nama" class="w-full p-2 border rounded-xl">
-                <select id="nr" class="w-full p-2 border rounded-xl"><option value="Guru">Guru</option><option value="Staff">Staff</option><option value="Admin">Admin</option></select>
-                <input id="ns" placeholder="Sekolah" class="w-full p-2 border rounded-xl">
-                <button onclick="saveUser()" class="w-full bg-blue-600 text-white py-2 rounded-xl">Simpan</button>
+                <input type="text" id="nu" placeholder="Username" class="w-full p-2 border rounded-xl outline-none">
+                <input type="text" id="np" placeholder="Password" class="w-full p-2 border rounded-xl outline-none">
+                <input type="text" id="nn" placeholder="Nama Lengkap" class="w-full p-2 border rounded-xl outline-none">
+                <select id="nr" class="w-full p-2 border rounded-xl bg-slate-50">
+                    <option value="Guru">Guru</option><option value="Staff">Staff</option><option value="Admin">Admin</option>
+                </select>
+                <input type="text" id="ns" placeholder="Sekolah (koma)" class="w-full p-2 border rounded-xl outline-none">
+                <div class="flex gap-2 pt-4">
+                    <button id="btnSaveU" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">SIMPAN</button>
+                    <button onclick="document.getElementById('mod').classList.add('hidden')" class="flex-1 bg-slate-100 py-3 rounded-xl">BATAL</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec";
-        let logs = [];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        async function init() {
-            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminGetData' }) });
-            const res = await r.json();
-            logs = res.data.slice(1);
-            id('bodyP').innerHTML = logs.reverse().map(r => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-4 text-xs">${r[0]}</td><td class="p-4 font-bold">${r[2]}</td><td class="p-4">${r[3]}</td>
-                    <td class="p-4 text-center font-mono">${r[4]||'-'}</td><td class="p-4 text-center font-mono">${r[5]||'-'}</td>
-                    <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-[10px] font-bold uppercase">${r[6]||'Hadir'}</span></td>
-                </tr>`).join('');
-            id('bodyU').innerHTML = res.users.slice(1).map(u => `
-                <tr><td class="p-4 font-mono">${u[0]}</td><td class="p-4 font-bold">${u[2]}</td><td class="p-4 text-xs font-bold">${u[3]}</td><td class="p-4 text-xs">${u[4]}</td>
-                <td class="p-4"><button onclick="delUser('${u[0]}')" class="text-red-500 font-bold">Hapus</button></td></tr>`).join('');
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
+            authDomain: "cekloknewversion.firebaseapp.com",
+            projectId: "cekloknewversion",
+            storageBucket: "cekloknewversion.firebasestorage.app",
+            messagingSenderId: "602084220497",
+            appId: "1:602084220497:web:ac20adef8bb50acef56270"
+        };
 
-        async function saveUser() {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addUser', newUsername: id('nu').value, newPassword: id('np').value, newNama: id('nn').value, newRole: id('nr').value, newSekolah: id('ns').value }) });
-            location.reload();
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let logsExport = [];
 
-        function exportXLS() {
-            const ws = XLSX.utils.json_to_sheet(logs);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Logs");
-            XLSX.writeFile(wb, "Laporan.xlsx");
-        }
+        // --- MONITOR DATA REAL-TIME ---
+        onSnapshot(query(collection(db, "presensi"), orderBy("tanggal", "desc")), (snap) => {
+            const tbody = document.getElementById('bodyP');
+            tbody.innerHTML = ''; logsExport = [];
+            snap.forEach(d => {
+                const data = d.data(); logsExport.push(data);
+                tbody.innerHTML += `<tr><td class="p-4 font-mono text-xs">${data.tanggal}</td><td class="p-4 font-bold">${data.nama}</td><td class="p-4 text-xs">${data.sekolah}</td><td class="p-4 text-center font-mono">${data.masuk||'-'}</td><td class="p-4 text-center font-mono">${data.pulang||'-'}</td><td class="p-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">${data.keterangan}</span></td></tr>`;
+            });
+        });
 
-        function switchTab(t) { id('tabP').classList.toggle('hidden', t!=='p'); id('tabU').classList.toggle('hidden', t!=='u'); }
-        function id(i) { return document.getElementById(i); }
-        window.onload = init;
+        onSnapshot(collection(db, "users"), (snap) => {
+            const tbody = document.getElementById('bodyU');
+            tbody.innerHTML = '';
+            snap.forEach(d => {
+                const u = d.data();
+                tbody.innerHTML += `<tr><td class="p-4 font-mono">${d.id}</td><td class="p-4 font-bold">${u.nama}</td><td class="p-4 text-[10px] font-bold uppercase">${u.role}</td><td class="p-4 text-xs">${u.sekolah.join(', ')}</td><td class="p-4 text-center"><button onclick="window.delU('${d.id}')" class="text-red-500 font-bold hover:underline">Hapus</button></td></tr>`;
+            });
+        });
+
+        document.getElementById('btnSaveU').onclick = async () => {
+            const id = document.getElementById('nu').value;
+            await setDoc(doc(db, "users", id), { password: document.getElementById('np').value, nama: document.getElementById('nn').value, role: document.getElementById('nr').value, sekolah: document.getElementById('ns').value.split(',').map(s=>s.trim()) });
+            document.getElementById('mod').classList.add('hidden');
+            alert("User Berhasil Dibuat!");
+        };
+
+        window.delU = async (id) => { if(confirm("Hapus user "+id+"?")) await deleteDoc(doc(db, "users", id)); };
+        window.exportXLS = () => { const ws = XLSX.utils.json_to_sheet(logsExport); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Logs"); XLSX.writeFile(wb, "Laporan_Ceklok.xlsx"); };
+        window.switchTab = (t) => { document.getElementById('tabP').classList.toggle('hidden', t!=='p'); document.getElementById('tabU').classList.toggle('hidden', t!=='u'); };
     </script>
 </body>
 </html>
