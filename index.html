@@ -133,13 +133,66 @@
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
         // --- VALIDASI & FORMAT JAM ---
-        window.validateKey = (el) => { el.value = el.value.replace(/[^0-9.:, ]/g, ''); };
-        window.formatTimeInput = (el) => {
-            let val = el.value.trim(); if (!val) return;
-            let parts = val.split(/[:., ]/);
-            let h = (parts[0] || "0").padStart(2, '0').substring(0, 2);
-            let m = (parts[1] || "0").padStart(2, '0').substring(0, 2);
-            if (parseInt(h) > 23) h = "23"; if (parseInt(m) > 59) m = "59";
+        // --- VALIDASI JAM REAL-TIME (HH:MM) ---
+        window.handleTimeInput = (el) => {
+            // Ambil hanya angka
+            let val = el.value.replace(/\D/g, '');
+            
+            // Batasi maksimal 4 digit (HHMM)
+            if (val.length > 4) val = val.substring(0, 4);
+        
+            let finalVal = "";
+        
+            // Validasi Digit ke-1 (Jam puluhan: hanya boleh 0, 1, 2)
+            if (val.length >= 1) {
+                const d1 = parseInt(val[0]);
+                if (d1 > 2) {
+                    finalVal = ""; // Dihapus jika angka pertama > 2 (misal ketik 8)
+                } else {
+                    finalVal += val[0];
+                }
+            }
+        
+            // Validasi Digit ke-2 (Jam satuan: jika digit pertama 2, maka max 3)
+            if (val.length >= 2 && finalVal.length === 1) {
+                const h = parseInt(finalVal + val[1]);
+                if (h > 23) {
+                    // Tetap gunakan digit pertama saja, digit kedua ditolak
+                } else {
+                    finalVal += val[1];
+                }
+            }
+        
+            // Validasi Digit ke-3 (Menit puluhan: hanya boleh 0-5)
+            if (val.length >= 3 && finalVal.length === 2) {
+                const m1 = parseInt(val[2]);
+                if (m1 > 5) {
+                    // Ditolak jika angka pertama menit > 5 (misal 60 menit tidak ada)
+                } else {
+                    finalVal += val[2];
+                }
+            }
+        
+            // Validasi Digit ke-4 (Menit satuan)
+            if (val.length >= 4 && finalVal.length === 3) {
+                finalVal += val[3];
+            }
+        
+            // Format otomatis menjadi HH:MM
+            if (finalVal.length > 2) {
+                el.value = finalVal.substring(0, 2) + ":" + finalVal.substring(2);
+            } else {
+                el.value = finalVal;
+            }
+        };
+        
+        // Fungsi pendukung agar saat keluar (blur) format tetap rapi (misal ketik 7 jadi 07:00)
+        window.formatTimeBlur = (el) => {
+            let val = el.value.trim();
+            if (!val) return;
+            let parts = val.split(':');
+            let h = (parts[0] || "0").padStart(2, '0');
+            let m = (parts[1] || "0").padEnd(2, '0').substring(0, 2);
             el.value = `${h}:${m}`;
         };
 
