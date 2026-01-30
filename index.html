@@ -14,11 +14,11 @@
     </div>
 
     <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-3xl shadow-xl">
-        <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">Login Sistem</h2>
+        <h2 class="text-2xl font-bold text-center mb-6">Login Sistem</h2>
         <div class="space-y-4">
             <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition">MASUK</button>
+            <button id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">MASUK</button>
         </div>
     </div>
 
@@ -37,8 +37,8 @@
                 <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold">
                     <tr>
                         <th class="p-4">Tanggal</th>
-                        <th class="p-4 text-center">Jam Masuk</th>
-                        <th class="p-4 text-center">Jam Pulang</th>
+                        <th class="p-4 text-center">Masuk</th>
+                        <th class="p-4 text-center">Pulang</th>
                         <th class="p-4">Keterangan</th>
                         <th class="p-4 text-center">Aksi</th>
                     </tr>
@@ -51,8 +51,8 @@
             💾 SIMPAN SEMUA PERUBAHAN
         </button>
         
-        <div class="mt-4 flex justify-between px-2 text-[10px] text-slate-400">
-            <span>💡 Ketik angka (misal: 7.5 atau 07:5) lalu klik di luar kotak untuk auto-format.</span>
+        <div class="mt-4 flex justify-between px-2 text-[10px] text-slate-400 italic">
+            <span>Contoh: Ketik 7.2 akan menjadi 07:02 secara otomatis.</span>
             <button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button>
         </div>
     </div>
@@ -77,27 +77,25 @@
         let masterLogs = [];
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
-        // --- FUNGSI AUTO FORMAT JAM (LOGIKA UTAMA) ---
+        // --- VALIDASI INPUT ---
+        window.validateKey = (el) => {
+            el.value = el.value.replace(/[^0-9.:, ]/g, ''); // Blokir huruf
+        };
+
         window.formatTimeInput = (el) => {
-            let val = el.value.replace(/[^0-9.:,]/g, '').replace(/[.,]/g, ':'); // Hanya angka dan pemisah
+            let val = el.value.trim();
             if (!val) return;
-
-            let parts = val.split(':');
-            let h = parts[0] || "00";
-            let m = parts[1] || "00";
-
-            // Normalisasi Jam dan Menit ke 2 digit
+            let parts = val.split(/[:., ]/);
+            let h = parts[0] || "0";
+            let m = parts[1] || "0";
             h = h.padStart(2, '0').substring(0, 2);
-            m = m.padEnd(2, '0').substring(0, 2);
-
-            // Validasi batasan jam (00-23) dan menit (00-59)
+            m = m.padStart(2, '0').substring(0, 2);
             if (parseInt(h) > 23) h = "23";
             if (parseInt(m) > 59) m = "59";
-
             el.value = `${h}:${m}`;
         };
 
-        // --- FUNGSI LOGIN ---
+        // --- AUTH & DATA (Firebase) ---
         window.handleLogin = async () => {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
@@ -130,7 +128,7 @@
         function renderTable() {
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
             document.getElementById('displayMonthYear').innerText = `${["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][m]} ${y}`;
-            document.getElementById('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('sekolah'))[0];
+            document.getElementById('schoolTitle').innerText = "UNIT: " + (localStorage.getItem('sekolah') ? JSON.parse(localStorage.getItem('sekolah'))[0] : "");
 
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -147,12 +145,12 @@
                     <tr class="${isSun ? 'bg-red-50' : ''}">
                         <td class="p-4 font-bold ${isSun ? 'text-red-500' : 'text-slate-700'}">${d} <span class="text-[9px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
                         <td class="p-2 text-center">
-                            <input type="text" placeholder="HH:MM" onblur="formatTimeInput(this)" value="${log.masuk||''}" ${isSun || isOff ? 'disabled' : ''} 
+                            <input type="text" placeholder="HH:MM" oninput="validateKey(this)" onblur="formatTimeInput(this)" value="${log.masuk||''}" ${isSun || isOff ? 'disabled' : ''} 
                             class="row-m w-20 p-2 border rounded-xl text-center text-xs font-mono ${isSun || isOff ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}">
                         </td>
                         <td class="p-2 text-center">
-                            <input type="text" placeholder="HH:MM" onblur="formatTimeInput(this)" value="${log.pulang||''}" ${isSun || isOff ? 'disabled' : ''} 
-                            class="row-p w-20 p-2 border rounded-xl text-center text-xs font-mono ${isSun || isOff ? 'bg-gray-100 cursor-not-allowed' : ''}">
+                            <input type="text" placeholder="HH:MM" oninput="validateKey(this)" onblur="formatTimeInput(this)" value="${log.pulang||''}" ${isSun || isOff ? 'disabled' : ''} 
+                            class="row-p w-20 p-2 border rounded-xl text-center text-xs font-mono ${isSun || isOff ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}">
                         </td>
                         <td class="p-2">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs ${isSun ? 'bg-gray-100' : 'bg-white'}">
@@ -170,22 +168,19 @@
             const rows = document.querySelectorAll('#tableBody tr');
             toggleLoading(true);
             for(let tr of rows) {
-                const mInput = tr.querySelector('.row-m'), pInput = tr.querySelector('.row-p');
-                if(mInput) formatTimeInput(mInput); // Pastikan format sebelum save
-                if(pInput) formatTimeInput(pInput);
+                const m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p'), k = tr.querySelector('.row-k').value, date = tr.querySelector('.row-d').value;
+                if(m && m.value) formatTimeInput(m);
+                if(p && p.value) formatTimeInput(p);
                 
-                const date = tr.querySelector('.row-d').value, m = mInput ? mInput.value : "", p = pInput ? pInput.value : "", k = tr.querySelector('.row-k').value;
-                if(m || p || k !== "Hadir") {
-                    await setDoc(doc(db, "presensi", `${user}_${date}`), { username: user, nama: nama, sekolah: sekolah, tanggal: date, masuk: m, pulang: p, keterangan: k });
+                if((m && m.value) || (p && p.value) || k !== "Hadir") {
+                    await setDoc(doc(db, "presensi", `${user}_${date}`), { username: user, nama: nama, sekolah: sekolah, tanggal: date, masuk: m ? m.value : "", pulang: p ? p.value : "", keterangan: k });
                 }
             }
             toggleLoading(false); alert("Data Tersimpan!");
         };
 
         window.handleStatus = (el) => {
-            const tr = el.closest('tr');
-            const m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p');
-            const off = el.value !== "Hadir";
+            const tr = el.closest('tr'), m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p'), off = el.value !== "Hadir";
             if(off) { m.value = ""; p.value = ""; }
             m.disabled = p.disabled = off;
             m.classList.toggle('bg-gray-100', off); p.classList.toggle('bg-gray-100', off);
