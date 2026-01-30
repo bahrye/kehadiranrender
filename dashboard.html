@@ -123,26 +123,65 @@
 
         window.showGlobalSummary = () => {
             const container = document.getElementById('globalSummaryContent');
-            container.innerHTML = ''; document.getElementById('modalSummary').classList.remove('hidden');
-            const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+            container.innerHTML = ''; 
+            document.getElementById('modalSummary').classList.remove('hidden');
+            
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
+            const mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             const days = new Date(y, m + 1, 0).getDate();
-            let workDays = 0; for(let i=1; i<=days; i++) { if(new Date(y,m,i).getDay() !== 0) workDays++; }
-
+            
+            let workDays = 0; 
+            for(let i=1; i<=days; i++) { 
+                if(new Date(y,m,i).getDay() !== 0) workDays++; 
+            }
+        
             allUsers.filter(u => u.role === 'Guru').forEach(guru => {
                 const logs = allLogs.filter(l => l.username === guru.id && new Date(l.tanggal).getMonth() === m);
                 let hadir = 0, libur = 0;
+                
                 logs.forEach(l => {
                     if(l.keterangan === 'Hadir' || (!l.keterangan && l.masuk)) hadir++;
                     else if(l.keterangan && l.keterangan.includes('Libur')) libur++;
                 });
+        
                 const alpa = workDays - hadir - libur;
-                container.innerHTML += `<div class="bg-slate-50 p-6 rounded-3xl border space-y-4">
-                    <h4 class="font-bold text-slate-800">${guru.nama}</h4>
-                    <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
-                        <div class="bg-white p-2 rounded-xl border"><p class="text-blue-600 font-bold">${workDays}</p>Hari</div>
-                        <div class="bg-white p-2 rounded-xl border"><p class="text-emerald-500 font-bold">${hadir}</p>Hadir</div>
-                        <div class="bg-white p-2 rounded-xl ${alpa > 0 ? 'glow-orange' : 'border'}"><p class="text-red-500 font-bold">${alpa}</p>Alpa</div>
-                    </div></div>`;
+                const presentase = workDays > 0 ? Math.round((hadir / (workDays - libur)) * 100) : 0;
+        
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div class="flex items-center gap-4 mb-5">
+                            <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl">👤</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 leading-tight">${guru.nama}</h4>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-1">Periode ${mNames[m]}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-blue-50/50 p-3 rounded-2xl text-center">
+                                <p class="text-blue-600 font-black text-lg">${workDays}</p>
+                                <p class="text-[9px] text-blue-400 uppercase font-bold">Hari</p>
+                            </div>
+                            <div class="bg-emerald-50/50 p-3 rounded-2xl text-center">
+                                <p class="text-emerald-600 font-black text-lg">${hadir}</p>
+                                <p class="text-[9px] text-emerald-400 uppercase font-bold">Hadir</p>
+                            </div>
+                            <div class="p-3 rounded-2xl text-center ${alpa > 0 ? 'bg-rose-50 ring-1 ring-rose-100' : 'bg-slate-50/50'}">
+                                <p class="${alpa > 0 ? 'text-rose-600' : 'text-slate-600'} font-black text-lg">${alpa}</p>
+                                <p class="text-[9px] text-slate-400 uppercase font-bold">Alpa</p>
+                            </div>
+                        </div>
+        
+                        <div class="mt-5 pt-4 border-t border-slate-50 flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Produktivitas</span>
+                            <span class="text-sm font-black ${presentase > 80 ? 'text-emerald-500' : 'text-amber-500'}">${presentase}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div class="h-full ${presentase > 80 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width: ${presentase}%"></div>
+                        </div>
+                    </div>`;
             });
         };
 
