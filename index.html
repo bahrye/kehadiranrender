@@ -232,7 +232,6 @@
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
-            // Update Header Periode dan Unit
             document.getElementById('displayMonthYear').innerText = `${monthNames[m]} ${y}`;
             document.getElementById('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('sekolah'))[0];
         
@@ -243,24 +242,17 @@
         
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateObj = new Date(y, m, d);
-                const isSun = dateObj.getDay() === 0; // Deteksi Hari Minggu
+                const isSun = dateObj.getDay() === 0;
                 const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-                
-                // Mencari data presensi di database (masterLogs)
                 const log = masterLogs.find(l => l.tanggal === dateKey) || {};
                 const isOff = log.keterangan && log.keterangan !== "Hadir";
         
-                // Hitung Statistik (Hanya hari kerja/bukan Minggu)
                 if(!isSun) {
                     stats.work++;
-                    if(log.keterangan === "Hadir" || (!log.keterangan && log.masuk)) {
-                        stats.hadir++;
-                    } else if(log.keterangan && log.keterangan.includes("Libur")) {
-                        stats.libur++;
-                    }
+                    if(log.keterangan === "Hadir" || (!log.keterangan && log.masuk)) stats.hadir++;
+                    else if(log.keterangan && log.keterangan.includes("Libur")) stats.libur++;
                 }
         
-                // Render Baris Tabel
                 tbody.innerHTML += `
                     <tr class="${isSun ? 'bg-red-50/50' : 'hover:bg-slate-50 transition-colors'}">
                         <td class="p-4 font-bold ${isSun ? 'text-red-500' : 'text-slate-700'}">
@@ -269,25 +261,25 @@
                         <td class="p-2 text-center">
                             <input type="text" 
                                 placeholder="HH:MM" 
-                                oninput="validateKey(this)" 
-                                onblur="formatTimeInput(this)" 
+                                oninput="handleTimeInput(this)" 
+                                onblur="formatTimeBlur(this)" 
                                 value="${log.masuk || ''}" 
                                 ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700'}">
+                                class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
                         </td>
                         <td class="p-2 text-center">
                             <input type="text" 
                                 placeholder="HH:MM" 
-                                oninput="validateKey(this)" 
-                                onblur="formatTimeInput(this)" 
+                                oninput="handleTimeInput(this)" 
+                                onblur="formatTimeBlur(this)" 
                                 value="${log.pulang || ''}" 
                                 ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-p w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700'}">
+                                class="row-p w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
                         </td>
                         <td class="p-2">
                             <select onchange="handleStatus(this)" 
                                 ${isSun ? 'disabled' : ''} 
-                                class="row-k w-full p-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700'}">
+                                class="row-k w-full p-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
                                 <option value="Hadir">Hadir</option>
                                 ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}
                             </select>
@@ -302,7 +294,7 @@
                         </td>
                     </tr>`;
             }
-            updateSummaryUI(stats); // Perbarui kartu statistik di bagian atas
+            updateSummaryUI(stats);
         }
 
         function updateSummaryUI(s) {
