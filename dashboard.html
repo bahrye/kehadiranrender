@@ -69,18 +69,62 @@
                     <h3 class="font-bold text-slate-800 text-lg">Manajemen Pengguna</h3>
                     <p class="text-slate-500 text-sm">Kelola akses guru dan staf sekolah</p>
                 </div>
-                <button onclick="document.getElementById('mod').classList.remove('hidden')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-100">
+                <button onclick="openUserModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-100">
                     + Tambah User
                 </button>
             </div>
             
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
                 <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <tr>
+                            <th class="p-4">Username</th>
+                            <th class="p-4">Nama Lengkap</th>
+                            <th class="p-4">Role</th>
+                            <th class="p-4 text-center">Aksi</th>
+                        </tr>
+                    </thead>
                     <tbody id="bodyU" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
     </main>
+
+    <div id="userModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[400] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 id="modalTitle" class="text-xl font-bold text-slate-800">Tambah User Baru</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 text-2xl">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="isEditMode" value="false">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                    <input type="text" id="modalUsername" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nama Lengkap</label>
+                    <input type="text" id="modalNama" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label>
+                    <input type="text" id="modalPassword" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Role</label>
+                    <select id="modalRole" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Guru">Guru</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Unit Sekolah</label>
+                    <input type="text" id="modalSekolah" placeholder="Contoh: MTS TANUNTUNG" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <button onclick="saveUser()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg">SIMPAN DATA USER</button>
+        </div>
+    </div>
     
     <div id="modalSummary" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl p-8 shadow-2xl space-y-6">
@@ -94,7 +138,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
@@ -109,23 +153,97 @@
         const db = getFirestore(app);
         let allUsers = [], allLogs = [];
 
-        // --- PERBAIKAN: PROTEKSI AKSES ADMIN ---
+        // Proteksi Akses
         const role = localStorage.getItem('role');
-        const userCek = localStorage.getItem('user_ceklok');
-        if (!userCek || role !== 'Admin') {
-            alert("Akses Terbatas! Halaman ini hanya untuk Admin.");
+        if (role !== 'Admin') {
             window.location.href = "index.html";
         }
 
+        // Snapshot Presensi
         onSnapshot(query(collection(db, "presensi"), orderBy("tanggal", "desc")), (snap) => {
             allLogs = []; snap.forEach(d => allLogs.push(d.data()));
             document.getElementById('bodyP').innerHTML = allLogs.map(r => `<tr><td class="p-4 font-mono text-xs">${r.tanggal}</td><td class="p-4 font-bold">${r.nama}</td><td class="p-4 text-center">${r.masuk||'-'}</td><td class="p-4 text-center">${r.pulang||'-'}</td><td class="p-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">${r.keterangan}</span></td></tr>`).join('');
         });
 
+        // Snapshot Users - Menambahkan Tombol Edit
         onSnapshot(collection(db, "users"), (snap) => {
             allUsers = []; snap.forEach(d => allUsers.push({id: d.id, ...d.data()}));
-            document.getElementById('bodyU').innerHTML = allUsers.map(u => `<tr><td class="p-4 font-mono">${u.id}</td><td class="p-4 font-bold">${u.nama}</td><td class="p-4 text-[10px] font-bold uppercase text-slate-400">${u.role}</td><td class="p-4 text-center"><button onclick="window.delU('${u.id}')" class="text-red-500 font-bold hover:underline">Hapus</button></td></tr>`).join('');
+            document.getElementById('bodyU').innerHTML = allUsers.map(u => `
+                <tr>
+                    <td class="p-4 font-mono">${u.id}</td>
+                    <td class="p-4 font-bold">${u.nama}</td>
+                    <td class="p-4 text-[10px] font-bold uppercase text-slate-400">${u.role}</td>
+                    <td class="p-4 text-center flex justify-center gap-3">
+                        <button onclick="window.editU('${u.id}')" class="text-blue-500 font-bold hover:underline">Edit</button>
+                        <button onclick="window.delU('${u.id}')" class="text-red-500 font-bold hover:underline">Hapus</button>
+                    </td>
+                </tr>`).join('');
         });
+
+        // FUNGSI MODAL USER
+        window.openUserModal = () => {
+            document.getElementById('modalTitle').innerText = "Tambah User Baru";
+            document.getElementById('isEditMode').value = "false";
+            document.getElementById('modalUsername').disabled = false;
+            document.getElementById('modalUsername').value = "";
+            document.getElementById('modalNama').value = "";
+            document.getElementById('modalPassword').value = "";
+            document.getElementById('modalRole').value = "Guru";
+            document.getElementById('modalSekolah').value = "";
+            document.getElementById('userModal').classList.remove('hidden');
+        };
+
+        window.closeUserModal = () => {
+            document.getElementById('userModal').classList.add('hidden');
+        };
+
+        window.editU = async (id) => {
+            const userRef = doc(db, "users", id);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                document.getElementById('modalTitle').innerText = "Edit User: " + id;
+                document.getElementById('isEditMode').value = "true";
+                document.getElementById('modalUsername').value = id;
+                document.getElementById('modalUsername').disabled = true; // Username tidak boleh diganti
+                document.getElementById('modalNama').value = data.nama;
+                document.getElementById('modalPassword').value = data.password;
+                document.getElementById('modalRole').value = data.role;
+                document.getElementById('modalSekolah').value = data.sekolah ? data.sekolah[0] : "";
+                document.getElementById('userModal').classList.remove('hidden');
+            }
+        };
+
+        window.saveUser = async () => {
+            const id = document.getElementById('modalUsername').value.trim();
+            const nama = document.getElementById('modalNama').value.trim();
+            const pass = document.getElementById('modalPassword').value.trim();
+            const role = document.getElementById('modalRole').value;
+            const sekolah = document.getElementById('modalSekolah').value.trim();
+
+            if(!id || !nama || !pass || !sekolah) {
+                alert("Semua kolom harus diisi!");
+                return;
+            }
+
+            try {
+                await setDoc(doc(db, "users", id), {
+                    nama: nama,
+                    password: pass,
+                    role: role,
+                    sekolah: [sekolah]
+                });
+                alert("User berhasil disimpan!");
+                closeUserModal();
+            } catch (err) {
+                console.error(err);
+                alert("Gagal menyimpan user!");
+            }
+        };
+
+        // Fungsi Global Lainnya
+        window.delU = async (id) => { if(confirm("Hapus user " + id + "?")) await deleteDoc(doc(db, "users", id)); };
+        window.switchTab = (t) => { document.getElementById('tabP').classList.toggle('hidden', t!=='p'); document.getElementById('tabU').classList.toggle('hidden', t!=='u'); };
 
         window.showGlobalSummary = () => {
             const container = document.getElementById('globalSummaryContent');
@@ -178,9 +296,6 @@
             doc.autoTable({ startY: 25, head: [tableHeader], body: tableRows, theme: 'grid', styles: { fontSize: 6, cellPadding: 0.5, halign: 'center', valign: 'middle', lineWidth: 0.1, minCellHeight: 8 }, headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 } });
             doc.save(`Tabulasi_Absensi_${periode}.pdf`);
         };
-
-        window.delU = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "users", id)); };
-        window.switchTab = (t) => { document.getElementById('tabP').classList.toggle('hidden', t!=='p'); document.getElementById('tabU').classList.toggle('hidden', t!=='u'); };
     </script>
 </body>
 </html>
