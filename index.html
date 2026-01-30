@@ -296,15 +296,42 @@
             toggleLoading(false); alert("Data Berhasil Disimpan!");
         };
 
+        // PERBAIKAN: handleStatus mengembalikan warna latar belakang saat status Hadir
         window.handleStatus = (el) => {
-            const tr = el.closest('tr'), m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p'), off = el.value !== "Hadir";
-            if(off) { m.value = ""; p.value = ""; }
-            m.disabled = p.disabled = off; m.classList.toggle('bg-gray-100', off); p.classList.toggle('bg-gray-100', off);
+            const tr = el.closest('tr');
+            const m = tr.querySelector('.row-m');
+            const p = tr.querySelector('.row-p');
+            const isNotHadir = el.value !== "Hadir";
+            
+            if (isNotHadir) {
+                m.value = "";
+                p.value = "";
+            }
+            
+            m.disabled = p.disabled = isNotHadir;
+            
+            // Atur class latar belakang
+            if (isNotHadir) {
+                m.classList.add('bg-slate-100', 'text-slate-400');
+                m.classList.remove('bg-white', 'text-slate-700');
+                p.classList.add('bg-slate-100', 'text-slate-400');
+                p.classList.remove('bg-white', 'text-slate-700');
+            } else {
+                m.classList.remove('bg-slate-100', 'text-slate-400');
+                m.classList.add('bg-white', 'text-slate-700');
+                p.classList.remove('bg-slate-100', 'text-slate-400');
+                p.classList.add('bg-white', 'text-slate-700');
+            }
         };
 
         window.clearRow = (btn) => {
             const tr = btn.closest('tr');
-            tr.querySelectorAll('input:not(.row-d), select').forEach(i => { i.value = (i.tagName === 'SELECT' ? 'Hadir' : ''); i.disabled = false; i.classList.remove('bg-gray-100'); });
+            tr.querySelectorAll('input:not(.row-d), select').forEach(i => { 
+                i.value = (i.tagName === 'SELECT' ? 'Hadir' : ''); 
+                i.disabled = false; 
+                i.classList.remove('bg-slate-100', 'text-slate-400'); 
+                i.classList.add('bg-white', 'text-slate-700');
+            });
         };
 
         function toggleLoading(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); }
