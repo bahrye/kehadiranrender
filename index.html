@@ -106,7 +106,7 @@
             </div>
             <button id="btnSave" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition">💾 Simpan Semua Perubahan</button>
             <div class="mt-4 flex justify-between px-2 text-[10px]">
-                <a id="adminLink" href="dashboard.html" class="hidden text-blue-500 font-bold uppercase">Dashboard Admin →</a>
+                <div></div>
                 <button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button>
             </div>
         </div>
@@ -132,65 +132,39 @@
         let masterLogs = [];
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
+        // Format Input Waktu (HH:MM)
         window.handleTimeInput = (el) => {
             if (el.lastValue === undefined) el.lastValue = "";
             const isDeleting = el.value.length < el.lastValue.length;
             let val = el.value;
-        
             if (!isDeleting && (val.endsWith('.') || val.endsWith(':'))) {
                 let numeric = val.replace(/[:.]/g, '');
-                if (numeric.length === 1) {
-                    el.value = "0" + numeric + ":";
-                    el.lastValue = el.value;
-                    return;
-                } else if (numeric.length === 2) {
-                    el.value = numeric + ":";
-                    el.lastValue = el.value;
-                    return;
-                }
+                if (numeric.length === 1) { el.value = "0" + numeric + ":"; el.lastValue = el.value; return; }
+                else if (numeric.length === 2) { el.value = numeric + ":"; el.lastValue = el.value; return; }
             }
-        
             let nums = val.replace(/\D/g, '');
             if (nums.length > 4) nums = nums.substring(0, 4);
-        
             let validated = "";
-            if (nums.length >= 1) {
-                const d1 = parseInt(nums[0]);
-                if (d1 <= 2) validated += nums[0];
-            }
-            if (nums.length >= 2 && validated.length === 1) {
-                const h = parseInt(validated + nums[1]);
-                if (h <= 23) validated += nums[1];
-            }
-            if (nums.length >= 3 && validated.length === 2) {
-                const m1 = parseInt(nums[2]);
-                if (m1 <= 5) validated += nums[2];
-            }
-            if (nums.length >= 4 && validated.length === 3) {
-                validated += nums[3];
-            }
-        
+            if (nums.length >= 1) { const d1 = parseInt(nums[0]); if (d1 <= 2) validated += nums[0]; }
+            if (nums.length >= 2 && validated.length === 1) { const h = parseInt(validated + nums[1]); if (h <= 23) validated += nums[1]; }
+            if (nums.length >= 3 && validated.length === 2) { const m1 = parseInt(nums[2]); if (m1 <= 5) validated += nums[2]; }
+            if (nums.length >= 4 && validated.length === 3) validated += nums[3];
             let finalValue = validated;
-            if (validated.length > 2) {
-                finalValue = validated.substring(0, 2) + ":" + validated.substring(2);
-            } else if (validated.length === 2 && !isDeleting) {
-                finalValue = validated + ":";
-            }
-        
+            if (validated.length > 2) finalValue = validated.substring(0, 2) + ":" + validated.substring(2);
+            else if (validated.length === 2 && !isDeleting) finalValue = validated + ":";
             el.value = finalValue;
             el.lastValue = finalValue;
         };
         
         window.formatTimeBlur = (el) => {
-            let val = el.value.trim();
-            if (!val) return;
+            let val = el.value.trim(); if (!val) return;
             let parts = val.split(':');
             let h = (parts[0] || "0").padStart(2, '0');
             let m = (parts[1] || "0").padEnd(2, '0').substring(0, 2);
-            el.value = `${h}:${m}`;
-            el.lastValue = el.value;
+            el.value = `${h}:${m}`; el.lastValue = el.value;
         };
 
+        // LOGIN LOGIC - PERBAIKAN REDIRECT ADMIN
         document.getElementById('btnLogin').onclick = async () => {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
@@ -204,17 +178,32 @@
                     localStorage.setItem('nama_guru', data.nama);
                     localStorage.setItem('role', data.role);
                     localStorage.setItem('sekolah', JSON.stringify(data.sekolah));
-                    location.reload();
-                } else { alert("Login Gagal!"); }
+
+                    // Redirect Otomatis Berdasarkan Role
+                    if (data.role === 'Admin') {
+                        window.location.href = "dashboard.html";
+                    } else {
+                        location.reload();
+                    }
+                } else { alert("Login Gagal! Username atau password salah."); }
             } catch (e) { toggleLoading(false); alert("Error Login!"); }
         };
 
+        // PROTEKSI HALAMAN INDEX.HTML
         function initApp() {
             const user = localStorage.getItem('user_ceklok');
+            const role = localStorage.getItem('role');
+
             if(!user) return;
+
+            // Jika role Admin mencoba akses index.html, paksa ke dashboard
+            if (role === 'Admin') {
+                window.location.href = "dashboard.html";
+                return;
+            }
+
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('timesheetSection').classList.remove('hidden');
-            if(localStorage.getItem('role') !== 'Guru') document.getElementById('adminLink').classList.remove('hidden');
 
             const q = query(collection(db, "presensi"), where("username", "==", user));
             onSnapshot(q, (snapshot) => {
@@ -297,22 +286,17 @@
             const user = localStorage.getItem('nama_guru');
             const sekolah = JSON.parse(localStorage.getItem('sekolah'))[0];
             const bulan = document.getElementById('displayMonthYear').innerText;
-
             doc.setFontSize(16); doc.text("LAPORAN DETAIL ABSENSI GURU", 105, 15, { align: "center" });
             doc.setFontSize(10); doc.text(`Sekolah: ${sekolah}`, 15, 25);
             doc.text(`Nama: ${user}`, 15, 30); doc.text(`Periode: ${bulan}`, 15, 35);
-
             const rows = [];
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 const cells = tr.querySelectorAll('td');
                 const masuk = tr.querySelector('.row-m').value;
                 const pulang = tr.querySelector('.row-p').value;
                 const ket = tr.querySelector('.row-k').value;
-                if(masuk || pulang || ket !== "Hadir") {
-                    rows.push([cells[0].innerText.split(' ')[0], masuk || '-', pulang || '-', ket]);
-                }
+                if(masuk || pulang || ket !== "Hadir") { rows.push([cells[0].innerText.split(' ')[0], masuk || '-', pulang || '-', ket]); }
             });
-
             doc.autoTable({ startY: 40, head: [['Tgl', 'Masuk', 'Pulang', 'Keterangan']], body: rows, theme: 'grid', headStyles: { fillColor: [30, 41, 59] } });
             doc.save(`Absensi_${user}_${bulan}.pdf`);
         };
@@ -326,31 +310,15 @@
             const sekolahName = sekolahData ? JSON.parse(sekolahData)[0] : "";
         
             for (let tr of rows) {
-                const elDate = tr.querySelector('.row-d');
-                const elMasuk = tr.querySelector('.row-m');
-                const elPulang = tr.querySelector('.row-p');
-                const elKet = tr.querySelector('.row-k');
-        
+                const elDate = tr.querySelector('.row-d'), elMasuk = tr.querySelector('.row-m'), elPulang = tr.querySelector('.row-p'), elKet = tr.querySelector('.row-k');
                 if (elDate && elMasuk && elPulang && elKet) {
-                    const date = elDate.value;
-                    const m = elMasuk.value;
-                    const p = elPulang.value;
-                    const k = elKet.value;
-        
+                    const date = elDate.value, m = elMasuk.value, p = elPulang.value, k = elKet.value;
                     if (m || p || k !== "Hadir") {
                         try {
                             await setDoc(doc(db, "presensi", `${userCeklok}_${date}`), {
-                                username: userCeklok,
-                                nama: namaGuru,
-                                sekolah: sekolahName,
-                                tanggal: date,
-                                masuk: m,
-                                pulang: p,
-                                keterangan: k
+                                username: userCeklok, nama: namaGuru, sekolah: sekolahName, tanggal: date, masuk: m, pulang: p, keterangan: k
                             });
-                        } catch (err) {
-                            console.error("Gagal menyimpan data tanggal " + date, err);
-                        }
+                        } catch (err) { console.error("Gagal simpan: " + date, err); }
                     }
                 }
             }
