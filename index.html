@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulir Kehadiran Guru</title>
+    <title>Formulir Kehadiran - MTS TANUNTUNG</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans">
 
-    <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">Login Sistem</h2>
+    <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-3xl shadow-xl">
+        <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">Login Guru</h2>
         <div class="space-y-4">
             <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
@@ -17,17 +17,17 @@
         </div>
     </div>
 
-    <div id="timesheetSection" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-white">
+    <div id="timesheetSection" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-3xl shadow-2xl">
         <div class="flex justify-between items-center mb-6">
-            <button onclick="changeMonth(-1)" class="px-3 py-1 bg-slate-100 rounded-lg hover:bg-slate-200">◀ Bulan Lalu</button>
+            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">◀ Bulan Lalu</button>
             <div class="text-center">
-                <p id="schoolTitle" class="text-xs font-bold text-blue-600 uppercase tracking-widest"></p>
                 <h2 id="displayMonthYear" class="text-2xl font-bold text-slate-800">Januari 2026</h2>
+                <p id="schoolTitle" class="text-xs text-blue-600 font-bold tracking-widest"></p>
             </div>
-            <button onclick="changeMonth(1)" class="px-3 py-1 bg-slate-100 rounded-lg hover:bg-slate-200">Bulan Depan ▶</button>
+            <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Bulan Depan ▶</button>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
                     <tr>
@@ -46,14 +46,14 @@
             💾 Simpan Semua Perubahan
         </button>
         
-        <div class="mt-4 flex justify-between items-center px-2">
-            <button onclick="localStorage.clear(); location.reload();" class="text-xs text-red-400 underline italic">Logout</button>
-            <a id="adminLink" href="dashboard.html" class="hidden text-xs text-blue-500 font-bold uppercase tracking-tight">Dashboard Admin →</a>
+        <div class="mt-4 flex justify-between items-center">
+            <button onclick="localStorage.clear(); location.reload();" class="text-xs text-red-400 underline">Logout</button>
+            <a id="adminLink" href="dashboard.html" class="hidden text-xs text-blue-600 font-bold uppercase">Dashboard Admin →</a>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3arGeenezphWGIMMoHJCBA2TG2jyzYiOsiB_P4PZPrfWSXpV_dQbDV13uf6UIqEel/exec"; // Ganti dengan URL /exec Anda
+        const SCRIPT_URL = "URL_GOOGLE_APPS_SCRIPT_ANDA"; // Masukkan URL Apps Script
         let currentDate = new Date();
         let ketOptions = [];
 
@@ -68,7 +68,7 @@
                 localStorage.setItem('role', res.role);
                 localStorage.setItem('list_sekolah', JSON.stringify(res.listSekolah));
                 location.reload();
-            } else { alert(res.message); }
+            } else { alert("Login Gagal!"); }
         }
 
         async function loadTimesheet() {
@@ -83,7 +83,7 @@
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
             document.getElementById('displayMonthYear').innerText = `${monthNames[month]} ${year}`;
-            document.getElementById('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('list_sekolah'))[0];
+            document.getElementById('schoolTitle').innerText = JSON.parse(localStorage.getItem('list_sekolah'))[0];
 
             const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getMonthlyData', username: user, month: month, year: year }) });
             const res = await resp.json();
@@ -97,26 +97,58 @@
             const days = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
 
             for (let d = 1; d <= days; d++) {
-                const log = logs.find(l => new Date(l[0]).getDate() === d) || {};
                 const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                const isSunday = dateObj.getDay() === 0;
+                const log = logs.find(l => new Date(l[0]).getDate() === d) || {};
                 const dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][dateObj.getDay()];
                 const fullDate = `${currentDate.getFullYear()}-${(currentDate.getMonth()+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
 
+                const isDisabledStatus = log[6] && log[6] !== "" && log[6] !== "Hadir";
+
                 tbody.innerHTML += `
-                    <tr class="${dateObj.getDay() === 0 ? 'bg-red-50' : ''}">
-                        <td class="p-4 font-medium">${d} <span class="text-[10px] text-slate-400 uppercase">(${dayName})</span></td>
-                        <td class="p-2 text-center"><input type="time" value="${log[4]||''}" class="row-masuk w-24 p-2 border rounded-lg bg-slate-50 text-center"></td>
-                        <td class="p-2 text-center"><input type="time" value="${log[5]||''}" class="row-pulang w-24 p-2 border rounded-lg bg-slate-50 text-center"></td>
+                    <tr class="${isSunday ? 'bg-red-50' : ''}">
+                        <td class="p-4 font-medium ${isSunday ? 'text-red-500' : 'text-slate-700'}">${d} <span class="text-[10px] text-slate-400">(${dayName})</span></td>
+                        <td class="p-2 text-center">
+                            <input type="text" placeholder="HH:MM" value="${log[4]||''}" ${isSunday || isDisabledStatus ? 'disabled' : ''} 
+                            class="row-masuk w-20 p-2 border rounded-xl text-center text-sm ${isSunday || isDisabledStatus ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="text" placeholder="HH:MM" value="${log[5]||''}" ${isSunday || isDisabledStatus ? 'disabled' : ''} 
+                            class="row-pulang w-20 p-2 border rounded-xl text-center text-sm ${isSunday || isDisabledStatus ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}">
+                        </td>
                         <td class="p-2">
-                            <select class="row-ket w-full p-2 border rounded-lg bg-slate-50">
-                                <option value="">--</option>
+                            <select onchange="handleStatusChange(this)" ${isSunday ? 'disabled' : ''} 
+                            class="row-ket w-full p-2 border rounded-xl text-sm ${isSunday ? 'bg-gray-100' : 'bg-white'}">
+                                <option value="">Hadir</option>
                                 ${ketOptions.map(o => `<option value="${o}" ${log[6]==o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </td>
-                        <td class="p-2 text-center"><button onclick="this.closest('tr').querySelectorAll('input,select').forEach(i=>i.value='')" class="text-red-400 text-xs">Hapus</button>
-                        <input type="hidden" class="row-date" value="${fullDate}"></td>
+                        <td class="p-2 text-center">
+                            <button onclick="clearRow(this)" ${isSunday ? 'disabled' : ''} class="text-red-400 hover:text-red-600 font-bold">×</button>
+                            <input type="hidden" class="row-date" value="${fullDate}">
+                        </td>
                     </tr>`;
             }
+        }
+
+        function handleStatusChange(el) {
+            const tr = el.closest('tr');
+            const m = tr.querySelector('.row-masuk');
+            const p = tr.querySelector('.row-pulang');
+            if(el.value !== "" && el.value !== "Hadir") {
+                m.value = ""; p.value = ""; m.disabled = true; p.disabled = true;
+                m.classList.add('bg-gray-100'); p.classList.add('bg-gray-100');
+            } else {
+                m.disabled = false; p.disabled = false;
+                m.classList.remove('bg-gray-100'); p.classList.remove('bg-gray-100');
+            }
+        }
+
+        function clearRow(btn) {
+            const tr = btn.closest('tr');
+            tr.querySelectorAll('input:not(.row-date), select').forEach(i => {
+                i.value = ''; i.disabled = false; i.classList.remove('bg-gray-100');
+            });
         }
 
         async function saveAll() {
@@ -127,9 +159,14 @@
                 const k = tr.querySelector('.row-ket').value;
                 if(m || p || k) rows.push({ tanggal: tr.querySelector('.row-date').value, masuk: m, pulang: p, keterangan: k });
             });
-
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAll', username: localStorage.getItem('user_ceklok'), nama: localStorage.getItem('nama_guru'), sekolah: JSON.parse(localStorage.getItem('list_sekolah'))[0], rows: rows }) });
-            alert("Data Disimpan!");
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ 
+                action: 'saveAll', 
+                username: localStorage.getItem('user_ceklok'), 
+                nama: localStorage.getItem('nama_guru'), 
+                sekolah: JSON.parse(localStorage.getItem('list_sekolah'))[0], 
+                rows: rows 
+            }) });
+            alert("Data berhasil disimpan!");
         }
 
         function changeMonth(s) { currentDate.setMonth(currentDate.getMonth() + s); loadTimesheet(); }
