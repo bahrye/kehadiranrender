@@ -270,6 +270,7 @@
                         <td class="p-2 text-center">
                             <input type="text" 
                                 placeholder="HH:MM" 
+                                onfocus="this.lastValue = this.value"
                                 oninput="handleTimeInput(this)" 
                                 onblur="formatTimeBlur(this)" 
                                 value="${log.masuk || ''}" 
@@ -279,12 +280,12 @@
                         <td class="p-2 text-center">
                             <input type="text" 
                                 placeholder="HH:MM" 
+                                onfocus="this.lastValue = this.value"
                                 oninput="handleTimeInput(this)" 
                                 onblur="formatTimeBlur(this)" 
-                                value="${log.pulang || ''}" 
+                                value="${log.masuk || ''}" 
                                 ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-p w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
-                        </td>
+                                class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">                        </td>
                         <td class="p-2">
                             <select onchange="handleStatus(this)" 
                                 ${isSun ? 'disabled' : ''} 
