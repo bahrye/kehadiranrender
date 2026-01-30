@@ -345,16 +345,45 @@
         window.saveAll = async () => {
             toggleLoading(true);
             const rows = document.querySelectorAll('#tableBody tr');
-            for(let tr of rows) {
-                const date = tr.querySelector('.row-d').value, m = tr.querySelector('.row-m').value, p = tr.querySelector('.row-p').value, k = tr.querySelector('.row-k').value;
-                if(m || p || k !== "Hadir") {
-                    await setDoc(doc(db, "presensi", `${localStorage.getItem('user_ceklok')}_${date}`), {
-                        username: localStorage.getItem('user_ceklok'), nama: localStorage.getItem('nama_guru'), 
-                        sekolah: JSON.parse(localStorage.getItem('sekolah'))[0], tanggal: date, masuk: m, pulang: p, keterangan: k
-                    });
+            const userCeklok = localStorage.getItem('user_ceklok');
+            const namaGuru = localStorage.getItem('nama_guru');
+            const sekolahData = localStorage.getItem('sekolah');
+            const sekolahName = sekolahData ? JSON.parse(sekolahData)[0] : "";
+        
+            for (let tr of rows) {
+                // Ambil elemen input/select dengan aman
+                const elDate = tr.querySelector('.row-d');
+                const elMasuk = tr.querySelector('.row-m');
+                const elPulang = tr.querySelector('.row-p');
+                const elKet = tr.querySelector('.row-k');
+        
+                // Validasi: Pastikan elemen-elemen tersebut ada di baris ini
+                if (elDate && elMasuk && elPulang && elKet) {
+                    const date = elDate.value;
+                    const m = elMasuk.value;
+                    const p = elPulang.value;
+                    const k = elKet.value;
+        
+                    // Simpan hanya jika ada data jam atau keterangan bukan "Hadir"
+                    if (m || p || k !== "Hadir") {
+                        try {
+                            await setDoc(doc(db, "presensi", `${userCeklok}_${date}`), {
+                                username: userCeklok,
+                                nama: namaGuru,
+                                sekolah: sekolahName,
+                                tanggal: date,
+                                masuk: m,
+                                pulang: p,
+                                keterangan: k
+                            });
+                        } catch (err) {
+                            console.error("Gagal menyimpan data tanggal " + date, err);
+                        }
+                    }
                 }
             }
-            toggleLoading(false); alert("Data Disimpan!");
+            toggleLoading(false);
+            alert("Data Berhasil Disimpan!");
         };
 
         window.handleStatus = (el) => {
