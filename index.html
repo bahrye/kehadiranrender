@@ -135,54 +135,58 @@
         // --- VALIDASI & FORMAT JAM ---
         // --- VALIDASI JAM REAL-TIME (HH:MM) ---
         window.handleTimeInput = (el) => {
-            // Ambil hanya angka
-            let val = el.value.replace(/\D/g, '');
-            
-            // Batasi maksimal 4 digit (HHMM)
-            if (val.length > 4) val = val.substring(0, 4);
+            let cursorP = el.selectionStart;
+            let val = el.value;
         
-            let finalVal = "";
-        
-            // Validasi Digit ke-1 (Jam puluhan: hanya boleh 0, 1, 2)
-            if (val.length >= 1) {
-                const d1 = parseInt(val[0]);
-                if (d1 > 2) {
-                    finalVal = ""; // Dihapus jika angka pertama > 2 (misal ketik 8)
-                } else {
-                    finalVal += val[0];
+            // 1. Deteksi jika user mengetik titik (.) atau titik dua (:) secara manual
+            // Contoh: User mengetik "1." atau "1:"
+            if (val.includes('.') || (val.includes(':') && val.length <= 3)) {
+                let numericPart = val.replace(/[:.]/g, '');
+                if (numericPart.length === 1) {
+                    // Ubah "1." atau "1:" menjadi "01:"
+                    el.value = "0" + numericPart + ":";
+                    return;
+                } else if (numericPart.length === 2) {
+                    // Ubah "21." atau "21:" menjadi "21:"
+                    el.value = numericPart + ":";
+                    return;
                 }
             }
         
-            // Validasi Digit ke-2 (Jam satuan: jika digit pertama 2, maka max 3)
-            if (val.length >= 2 && finalVal.length === 1) {
-                const h = parseInt(finalVal + val[1]);
-                if (h > 23) {
-                    // Tetap gunakan digit pertama saja, digit kedua ditolak
-                } else {
-                    finalVal += val[1];
-                }
+            // 2. Bersihkan input hanya untuk angka saja untuk validasi digit
+            let cleanVal = val.replace(/\D/g, '');
+            if (cleanVal.length > 4) cleanVal = cleanVal.substring(0, 4);
+        
+            let validated = "";
+        
+            // Digit 1 (Jam puluhan: 0-2)
+            if (cleanVal.length >= 1) {
+                const d1 = parseInt(cleanVal[0]);
+                if (d1 <= 2) validated += cleanVal[0];
             }
         
-            // Validasi Digit ke-3 (Menit puluhan: hanya boleh 0-5)
-            if (val.length >= 3 && finalVal.length === 2) {
-                const m1 = parseInt(val[2]);
-                if (m1 > 5) {
-                    // Ditolak jika angka pertama menit > 5 (misal 60 menit tidak ada)
-                } else {
-                    finalVal += val[2];
-                }
+            // Digit 2 (Jam satuan: jika jam >= 20, max 3)
+            if (cleanVal.length >= 2 && validated.length === 1) {
+                const h = parseInt(validated + cleanVal[1]);
+                if (h <= 23) validated += cleanVal[1];
             }
         
-            // Validasi Digit ke-4 (Menit satuan)
-            if (val.length >= 4 && finalVal.length === 3) {
-                finalVal += val[3];
+            // Digit 3 (Menit puluhan: 0-5)
+            if (cleanVal.length >= 3 && validated.length === 2) {
+                const m1 = parseInt(cleanVal[2]);
+                if (m1 <= 5) validated += cleanVal[2];
             }
         
-            // Format otomatis menjadi HH:MM
-            if (finalVal.length > 2) {
-                el.value = finalVal.substring(0, 2) + ":" + finalVal.substring(2);
+            // Digit 4 (Menit satuan)
+            if (cleanVal.length >= 4 && validated.length === 3) {
+                validated += cleanVal[3];
+            }
+        
+            // 3. Output dengan format otomatis
+            if (validated.length >= 2) {
+                el.value = validated.substring(0, 2) + ":" + validated.substring(2);
             } else {
-                el.value = finalVal;
+                el.value = validated;
             }
         };
         
