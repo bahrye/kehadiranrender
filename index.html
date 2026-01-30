@@ -201,12 +201,40 @@
 
                 tbody.innerHTML += `
                     <tr class="${isSun ? 'bg-red-50' : ''}">
-                        <td class="p-4 font-bold ${isSun ? 'text-red-500' : ''}">${d} <span class="text-[9px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
-                        <td class="p-2 text-center"><input type="text" oninput="validateKey(this)" onblur="formatTimeInput(this)" value="${log.masuk||''}" ${isSun || isOff ? 'disabled' : ''} class="row-m w-20 p-2 border rounded-xl text-center text-xs font-mono ${isSun || isOff ? 'bg-gray-100' : ''}"></td>
-                        <td class="p-2 text-center"><input type="text" oninput="validateKey(this)" onblur="formatTimeInput(this)" value="${log.pulang||''}" ${isSun || isOff ? 'disabled' : ''} class="row-p w-20 p-2 border rounded-xl text-center text-xs font-mono ${isSun || isOff ? 'bg-gray-100' : ''}"></td>
-                        <td class="p-2"><select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs ${isSun ? 'bg-gray-100' : ''}"><option value="Hadir">Hadir</option>${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan==o?'selected':''}>${o}</option>` : '').join('')}</select></td>
-                        <td class="p-2 text-center"><button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} class="text-red-400 font-bold">×</button><input type="hidden" class="row-d" value="${dateKey}"></td>
+                        <td class="p-4 font-bold ${isSun ? 'text-red-500' : ''}">${d} 
+                            <span class="text-[9px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span>
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="text" 
+                                placeholder="HH:MM" 
+                                oninput="validateKey(this)" 
+                                onblur="formatTimeInput(this)" 
+                                value="${log.masuk||''}" 
+                                ${isSun || isOff ? 'disabled' : ''} 
+                                class="row-m w-20 p-2 border rounded-xl text-center text-xs font-mono placeholder:text-slate-300 ${isSun || isOff ? 'bg-gray-100' : 'bg-white'}">
+                        </td>
+                        <td class="p-2 text-center">
+                            <input type="text" 
+                                placeholder="HH:MM" 
+                                oninput="validateKey(this)" 
+                                onblur="formatTimeInput(this)" 
+                                value="${log.pulang||''}" 
+                                ${isSun || isOff ? 'disabled' : ''} 
+                                class="row-p w-20 p-2 border rounded-xl text-center text-xs font-mono placeholder:text-slate-300 ${isSun || isOff ? 'bg-gray-100' : 'bg-white'}">
+                        </td>
+                        <td class="p-2">
+                            <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} 
+                                class="row-k w-full p-2 border rounded-xl text-xs ${isSun ? 'bg-gray-100' : ''}">
+                                <option value="Hadir">Hadir</option>
+                                ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan==o?'selected':''}>${o}</option>` : '').join('')}
+                            </select>
+                        </td>
+                        <td class="p-2 text-center">
+                            <button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} class="text-red-400 font-bold">×</button>
+                            <input type="hidden" class="row-d" value="${dateKey}">
+                        </td>
                     </tr>`;
+                [cite_start]``` [cite: 1]
             }
             updateSummaryUI(stats);
         }
