@@ -117,25 +117,70 @@
 
         window.downloadPDFAllGuru = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const now = new Date(), mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            const periode = `${mNames[now.getMonth()]} ${now.getFullYear()}`;
-
-            doc.setFontSize(16); doc.text("TABULASI ABSENSI SELURUH GURU", 105, 15, { align: "center" });
-            doc.setFontSize(10); doc.text(`Sekolah: MTS TANUNTUNG | Periode: ${periode}`, 105, 22, { align: "center" });
-
+            const doc = new jsPDF('l', 'mm', 'a4'); // Gunakan format Landscape agar muat banyak kolom
+            const now = new Date();
+            const m = now.getMonth();
+            const y = now.getFullYear();
+            const mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const periode = `${mNames[m]} ${y}`;
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+        
+            // Header Laporan
+            doc.setFontSize(14);
+            doc.text("LAPORAN DETAIL ABSENSI GURU", 148, 15, { align: "center" });
+            doc.setFontSize(10);
+            doc.text(`Sekolah: MTS TANUNTUNG | Periode: ${periode}`, 148, 22, { align: "center" });
+        
+            // Membuat Header Tabel (No, Nama, lalu Tanggal 1 s/d 31)
+            const tableHeader = ['No', 'Nama Guru'];
+            for (let i = 1; i <= daysInMonth; i++) {
+                tableHeader.push(i.toString());
+            }
+        
             const tableRows = [];
+            // Filter hanya user dengan role Guru
             allUsers.filter(u => u.role === 'Guru').forEach((guru, idx) => {
-                const logs = allLogs.filter(l => l.username === guru.id && new Date(l.tanggal).getMonth() === now.getMonth());
-                let hadir = 0;
-                const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                let workDays = 0; for(let i=1; i<=days; i++) { if(new Date(now.getFullYear(), now.getMonth(), i).getDay() !== 0) workDays++; }
-                logs.forEach(l => { if(l.keterangan === 'Hadir' || (!l.keterangan && l.masuk)) hadir++; });
-                tableRows.push([idx + 1, guru.nama, workDays, hadir, workDays - hadir, `${Math.round((hadir/workDays)*100)}%`]);
+                const rowData = [idx + 1, guru.nama];
+                
+                // Loop setiap tanggal untuk mengambil jam masuk
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateKey = `${y}-${(m + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+                    const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                    
+                    if (log) {
+                        // Jika ada data, tampilkan jam masuk (atau 'H' jika hadir tanpa jam)
+                        // Sesuai file PDF contoh yang menampilkan jam masuk/pulang bertumpuk
+                        // Di sini kita tampilkan jam masuk saja agar rapi di tabel
+                        rowData.push(log.masuk || (log.keterangan !== 'Hadir' ? log.keterangan : 'H'));
+                    } else {
+                        rowData.push("-");
+                    }
+                }
+                tableRows.push(rowData);
             });
-
-            doc.autoTable({ startY: 30, head: [['No', 'Nama Guru', 'Kerja', 'Hadir', 'Alpa', '%']], body: tableRows, headStyles: { fillColor: [225, 29, 72] } });
-            doc.save(`Tabulasi_Absensi_${periode}.pdf`);
+        
+            // Generate Tabel menggunakan autoTable
+            doc.autoTable({
+                startY: 30,
+                head: [tableHeader],
+                body: tableRows,
+                theme: 'grid',
+                styles: {
+                    fontSize: 5, // Font kecil agar muat 31 kolom dalam satu halaman
+                    cellPadding: 1,
+                    halign: 'center'
+                },
+                headStyles: {
+                    fillColor: [30, 41, 59],
+                    textColor: [255, 255, 255],
+                    fontSize: 6
+                },
+                columnStyles: {
+                    1: { halign: 'left', cellWidth: 30 } // Kolom Nama lebih lebar
+                }
+            });
+        
+            doc.save(`Rekap_Absensi_Sekolah_${periode}.pdf`);
         };
 
         window.delU = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "users", id)); };
