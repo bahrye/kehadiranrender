@@ -3,90 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Ceklok</title>
-    <style>
-        body { font-family: sans-serif; max-width: 400px; margin: 2rem auto; padding: 1rem; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; }
-        button { background-color: #0070f3; color: white; border: none; cursor: pointer; }
-        button:disabled { background-color: #ccc; }
-        .loading { display: none; text-align: center; }
-    </style>
+    <title>Ceklok Guru Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-    <h2>Absensi Manual</h2>
+    <div id="app" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">Ceklok Guru</h2>
 
-    <form name="submit-to-google-sheet">
-        <label>Nama Lengkap</label>
-        <input name="Nama" type="text" placeholder="Nama Anda" required>
+        <div id="loginSection">
+            <input type="text" id="username" placeholder="Username" class="w-full p-2 mb-4 border rounded">
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 mb-4 border rounded">
+            <button onclick="handleLogin()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+        </div>
 
-        <label>Status</label>
-        <select name="Status">
-            <option value="Masuk">Absen Masuk</option>
-            <option value="Pulang">Absen Pulang</option>
-            <option value="Izin">Izin/Sakit</option>
-        </select>
+        <div id="ceklokSection" class="hidden">
+            <p id="welcomeText" class="mb-4 font-semibold"></p>
+            
+            <label class="block mb-2">Jenis Presensi:</label>
+            <select id="jenis" class="w-full p-2 mb-4 border rounded">
+                <option value="Masuk">Masuk</option>
+                <option value="Pulang">Pulang</option>
+            </select>
 
-        <input name="Koordinat" type="hidden" id="koordinat">
+            <label class="block mb-2">Pilih Jam:</label>
+            <input type="time" id="jam" class="w-full p-2 mb-4 border rounded">
 
-        <button type="submit" id="btnKirim">Kirim Absensi</button>
-    </form>
-
-    <div class="loading" id="loading">Sedang mengirim...</div>
-    <p id="pesan"></p>
+            <button onclick="handleSubmit()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Kirim Presensi</button>
+            <button onclick="handleLogout()" class="w-full mt-4 text-gray-500 text-sm underline">Logout</button>
+        </div>
+    </div>
 
     <script>
-        // GANTI URL INI DENGAN URL WEB APP ANDA DARI LANGKAH 1
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxVbp0o9I_PBg5ftijWF71FdoPOsfDSkgtemYYuSzdiu3V4MbMiLwZEMr5UnGJAdO2p/exec';
-        
-        const form = document.forms['submit-to-google-sheet'];
-        const btnKirim = document.getElementById('btnKirim');
-        const loading = document.getElementById('loading');
-        const pesan = document.getElementById('pesan');
-        const inputKoordinat = document.getElementById('koordinat');
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec"; // Ganti dengan URL dari Google Apps Script
 
-        // Ambil Lokasi saat halaman dimuat
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                inputKoordinat.value = position.coords.latitude + ", " + position.coords.longitude;
-            }, function(err) {
-                alert("Harap izinkan akses lokasi untuk melakukan absensi.");
-            });
-        } else {
-            alert("Browser tidak mendukung Geolocation.");
+        function handleLogin() {
+            // Logika sederhana: Anda bisa memverifikasi via Apps Script
+            const user = document.getElementById('username').value;
+            if(user) {
+                localStorage.setItem('user_ceklok', user);
+                showCeklok();
+            }
         }
 
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-            
-            if(!inputKoordinat.value) {
-                alert("Lokasi belum terdeteksi. Pastikan GPS aktif.");
-                return;
+        function showCeklok() {
+            const user = localStorage.getItem('user_ceklok');
+            if(user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('ceklokSection').classList.remove('hidden');
+                document.getElementById('welcomeText').innerText = "Halo, " + user;
             }
+        }
 
-            btnKirim.disabled = true;
-            loading.style.display = 'block';
+        async function handleSubmit() {
+            const data = {
+                username: localStorage.getItem('user_ceklok'),
+                jenis: document.getElementById('jenis').value,
+                jam: document.getElementById('jam').value,
+                action: 'submitPresensi'
+            };
 
-            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-                .then(response => {
-                    loading.style.display = 'none';
-                    pesan.innerText = "Absensi Berhasil!";
-                    form.reset();
-                    btnKirim.disabled = false;
-                    // Reset koordinat setelah reset form
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(pos => {
-                             inputKoordinat.value = pos.coords.latitude + ", " + pos.coords.longitude;
-                        });
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    pesan.innerText = "Gagal mengirim! Coba lagi.";
-                    btnKirim.disabled = false;
-                    console.error('Error!', error.message);
-                });
-        });
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+
+            if(response.ok) {
+                alert("Presensi berhasil dikirim!");
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('user_ceklok');
+            location.reload();
+        }
+
+        // Jalankan saat load
+        if(localStorage.getItem('user_ceklok')) showCeklok();
     </script>
 </body>
 </html>
