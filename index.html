@@ -3,66 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presensi Guru</title>
+    <title>Formulir Kehadiran Guru</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans p-4">
+<body class="bg-slate-100 min-h-screen p-4 font-sans">
 
-    <div class="max-w-md mx-auto">
-        <div id="loginBox" class="bg-white mt-10 p-8 rounded-2xl shadow-lg">
-            <h2 class="text-2xl font-bold text-center mb-6 text-indigo-700">LOGIN GURU</h2>
-            <div class="space-y-4">
-                <input type="text" id="username" placeholder="Username / NIP" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                <button onclick="handleLogin()" id="btnLogin" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition">MASUK</button>
+    <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl">
+        <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">Login Sistem</h2>
+        <div class="space-y-4">
+            <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">MASUK</button>
+        </div>
+    </div>
+
+    <div id="timesheetSection" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-white">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="changeMonth(-1)" class="px-3 py-1 bg-slate-100 rounded-lg hover:bg-slate-200">◀ Bulan Lalu</button>
+            <div class="text-center">
+                <p id="schoolTitle" class="text-xs font-bold text-blue-600 uppercase tracking-widest"></p>
+                <h2 id="displayMonthYear" class="text-2xl font-bold text-slate-800">Januari 2026</h2>
             </div>
+            <button onclick="changeMonth(1)" class="px-3 py-1 bg-slate-100 rounded-lg hover:bg-slate-200">Bulan Depan ▶</button>
         </div>
 
-        <div id="ceklokBox" class="hidden bg-white mt-10 p-8 rounded-2xl shadow-lg border-t-4 border-indigo-600">
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <p class="text-slate-500 text-sm">Selamat Datang,</p>
-                    <h3 id="userNameDisplay" class="font-bold text-lg"></h3>
-                </div>
-                <button onclick="handleLogout()" class="text-red-500 text-xs underline">Logout</button>
-            </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                    <tr>
+                        <th class="p-4">Tanggal</th>
+                        <th class="p-4 text-center">Jam Masuk</th>
+                        <th class="p-4 text-center">Jam Pulang</th>
+                        <th class="p-4">Keterangan</th>
+                        <th class="p-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
 
-            <div class="space-y-4">
-                <div id="schoolPicker"></div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-1">Status Kehadiran</label>
-                    <select id="jenis" class="w-full p-3 border rounded-lg bg-slate-50">
-                        <option value="Masuk">Datang / Masuk</option>
-                        <option value="Pulang">Pulang</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">Pilih Jam</label>
-                    <input type="time" id="jam" class="w-full p-3 border rounded-lg bg-slate-50 text-center text-xl font-bold">
-                </div>
-
-                <button onclick="handleSubmit()" id="btnSubmit" class="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-600 transition shadow-lg">KIRIM PRESENSI</button>
-                
-                <div id="adminLink" class="hidden mt-4 pt-4 border-t text-center">
-                    <a href="dashboard.html" class="text-indigo-600 font-medium hover:underline">Ke Dashboard Admin →</a>
-                </div>
-            </div>
+        <button onclick="saveAll()" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-blue-200 shadow-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
+            💾 Simpan Semua Perubahan
+        </button>
+        
+        <div class="mt-4 flex justify-between items-center px-2">
+            <button onclick="localStorage.clear(); location.reload();" class="text-xs text-red-400 underline italic">Logout</button>
+            <a id="adminLink" href="dashboard.html" class="hidden text-xs text-blue-500 font-bold uppercase tracking-tight">Dashboard Admin →</a>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec";
+        const SCRIPT_URL = "URL_GOOGLE_APPS_SCRIPT_ANDA"; // Ganti dengan URL /exec Anda
+        let currentDate = new Date();
+        let ketOptions = [];
 
         async function handleLogin() {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
-            if(!user || !pass) return alert("Isi data!");
-
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username: user, password: pass }) });
-            const res = await resp.json();
-            
+            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username: user, password: pass }) });
+            const res = await r.json();
             if(res.success) {
                 localStorage.setItem('user_ceklok', res.username);
                 localStorage.setItem('nama_guru', res.nama);
@@ -72,45 +71,69 @@
             } else { alert(res.message); }
         }
 
-        function setupUI() {
-            const role = localStorage.getItem('role');
-            if(!role) return;
+        async function loadTimesheet() {
+            const user = localStorage.getItem('user_ceklok');
+            if(!user) return;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('timesheetSection').classList.remove('hidden');
+            if(localStorage.getItem('role') !== 'Guru') document.getElementById('adminLink').classList.remove('hidden');
 
-            document.getElementById('loginBox').classList.add('hidden');
-            document.getElementById('ceklokBox').classList.remove('hidden');
-            document.getElementById('userNameDisplay').innerText = localStorage.getItem('nama_guru');
-            if(role === 'Admin' || role === 'Staff') document.getElementById('adminLink').classList.remove('hidden');
-
-            const sekolahs = JSON.parse(localStorage.getItem('list_sekolah'));
-            let html = '<label class="block text-sm font-medium mb-1">Lokasi Sekolah</label>';
-            if(sekolahs.length > 1) {
-                html += `<select id="sekolah_pilihan" class="w-full p-3 border rounded-lg bg-slate-50">
-                    ${sekolahs.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('')}
-                </select>`;
-            } else {
-                html += `<input type="text" id="sekolah_pilihan" value="${sekolahs[0]}" readonly class="w-full p-3 border rounded-lg bg-slate-100">`;
-            }
-            document.getElementById('schoolPicker').innerHTML = html;
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
-            const now = new Date();
-            document.getElementById('jam').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('displayMonthYear').innerText = `${monthNames[month]} ${year}`;
+            document.getElementById('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('list_sekolah'))[0];
+
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getMonthlyData', username: user, month: month, year: year }) });
+            const res = await resp.json();
+            ketOptions = res.options;
+            renderTable(res.logs);
         }
 
-        async function handleSubmit() {
-            const data = {
-                action: 'submitPresensi',
-                username: localStorage.getItem('user_ceklok'),
-                nama: localStorage.getItem('nama_guru'),
-                sekolah_pilihan: document.getElementById('sekolah_pilihan').value,
-                jenis: document.getElementById('jenis').value,
-                jam: document.getElementById('jam').value
-            };
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            alert("Presensi Berhasil!");
+        function renderTable(logs) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            const days = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+
+            for (let d = 1; d <= days; d++) {
+                const log = logs.find(l => new Date(l[0]).getDate() === d) || {};
+                const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                const dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][dateObj.getDay()];
+                const fullDate = `${currentDate.getFullYear()}-${(currentDate.getMonth()+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+
+                tbody.innerHTML += `
+                    <tr class="${dateObj.getDay() === 0 ? 'bg-red-50' : ''}">
+                        <td class="p-4 font-medium">${d} <span class="text-[10px] text-slate-400 uppercase">(${dayName})</span></td>
+                        <td class="p-2 text-center"><input type="time" value="${log[4]||''}" class="row-masuk w-24 p-2 border rounded-lg bg-slate-50 text-center"></td>
+                        <td class="p-2 text-center"><input type="time" value="${log[5]||''}" class="row-pulang w-24 p-2 border rounded-lg bg-slate-50 text-center"></td>
+                        <td class="p-2">
+                            <select class="row-ket w-full p-2 border rounded-lg bg-slate-50">
+                                <option value="">--</option>
+                                ${ketOptions.map(o => `<option value="${o}" ${log[6]==o?'selected':''}>${o}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td class="p-2 text-center"><button onclick="this.closest('tr').querySelectorAll('input,select').forEach(i=>i.value='')" class="text-red-400 text-xs">Hapus</button>
+                        <input type="hidden" class="row-date" value="${fullDate}"></td>
+                    </tr>`;
+            }
         }
 
-        function handleLogout() { localStorage.clear(); location.reload(); }
-        window.onload = setupUI;
+        async function saveAll() {
+            const rows = [];
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                const m = tr.querySelector('.row-masuk').value;
+                const p = tr.querySelector('.row-pulang').value;
+                const k = tr.querySelector('.row-ket').value;
+                if(m || p || k) rows.push({ tanggal: tr.querySelector('.row-date').value, masuk: m, pulang: p, keterangan: k });
+            });
+
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAll', username: localStorage.getItem('user_ceklok'), nama: localStorage.getItem('nama_guru'), sekolah: JSON.parse(localStorage.getItem('list_sekolah'))[0], rows: rows }) });
+            alert("Data Disimpan!");
+        }
+
+        function changeMonth(s) { currentDate.setMonth(currentDate.getMonth() + s); loadTimesheet(); }
+        window.onload = loadTimesheet;
     </script>
 </body>
 </html>
