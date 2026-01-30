@@ -3,163 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Presensi Multi-Sekolah</title>
+    <title>Presensi Guru</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .loader { border-top-color: #3b82f6; animation: spinner 1s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .hidden { display: none; }
-    </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans">
+<body class="bg-slate-50 min-h-screen font-sans p-4">
 
-    <nav id="navbar" class="hidden bg-white shadow-sm p-4 mb-6">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <span class="font-bold text-blue-600">PRESENSI APP</span>
-            <div class="flex items-center gap-4">
-                <span id="navInfo" class="text-sm text-slate-600"></span>
-                <button onclick="handleLogout()" class="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-200">Logout</button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="max-w-5xl mx-auto p-4">
-        
-        <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-extrabold text-slate-800">Selamat Datang</h2>
-                <p class="text-slate-500">Silahkan login ke akun Anda</p>
-            </div>
+    <div class="max-w-md mx-auto">
+        <div id="loginBox" class="bg-white mt-10 p-8 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-6 text-indigo-700">LOGIN GURU</h2>
             <div class="space-y-4">
-                <input type="text" id="username" placeholder="Username" class="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition">
-                <input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition">
-                <button onclick="handleLogin()" id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg">MASUK</button>
+                <input type="text" id="username" placeholder="Username / NIP" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="handleLogin()" id="btnLogin" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition">MASUK</button>
             </div>
         </div>
 
-        <div id="guruSection" class="hidden max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-blue-100">
-            <h3 class="text-xl font-bold mb-4 text-slate-800">Presensi Harian</h3>
-            
-            <div id="schoolPickerArea" class="mb-4">
-                </div>
-
-            <div class="space-y-4">
+        <div id="ceklokBox" class="hidden bg-white mt-10 p-8 rounded-2xl shadow-lg border-t-4 border-indigo-600">
+            <div class="flex justify-between items-start mb-6">
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Status</label>
+                    <p class="text-slate-500 text-sm">Selamat Datang,</p>
+                    <h3 id="userNameDisplay" class="font-bold text-lg"></h3>
+                </div>
+                <button onclick="handleLogout()" class="text-red-500 text-xs underline">Logout</button>
+            </div>
+
+            <div class="space-y-4">
+                <div id="schoolPicker"></div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Status Kehadiran</label>
                     <select id="jenis" class="w-full p-3 border rounded-lg bg-slate-50">
-                        <option value="Masuk">Jam Masuk</option>
-                        <option value="Pulang">Jam Pulang</option>
+                        <option value="Masuk">Datang / Masuk</option>
+                        <option value="Pulang">Pulang</option>
                     </select>
                 </div>
+
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Jam Ceklok (Manual)</label>
-                    <input type="time" id="jam" class="w-full p-3 border rounded-lg bg-slate-50">
+                    <label class="block text-sm font-medium mb-1">Pilih Jam</label>
+                    <input type="time" id="jam" class="w-full p-3 border rounded-lg bg-slate-50 text-center text-xl font-bold">
                 </div>
-                <button onclick="handleSubmit()" id="btnSubmit" class="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-600 transition shadow-md">KIRIM DATA</button>
+
+                <button onclick="handleSubmit()" id="btnSubmit" class="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl hover:bg-emerald-600 transition shadow-lg">KIRIM PRESENSI</button>
+                
+                <div id="adminLink" class="hidden mt-4 pt-4 border-t text-center">
+                    <a href="dashboard.html" class="text-indigo-600 font-medium hover:underline">Ke Dashboard Admin →</a>
+                </div>
             </div>
         </div>
-
-        <div id="adminSection" class="hidden bg-white p-6 rounded-2xl shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-slate-800">Data Presensi Seluruh Guru</h3>
-                <button onclick="loadAdminData()" class="text-sm bg-blue-50 text-blue-600 px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-100">Refresh Data</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 text-sm">
-                            <th class="p-3 border-b">Waktu Input</th>
-                            <th class="p-3 border-b">Nama Guru</th>
-                            <th class="p-3 border-b">Sekolah</th>
-                            <th class="p-3 border-b">Status</th>
-                            <th class="p-3 border-b">Jam Dipilih</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTableBody" class="text-sm text-slate-700">
-                        </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="loading" class="hidden fixed inset-0 bg-white/80 flex items-center justify-center z-50">
-            <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-12 w-12"></div>
-        </div>
-
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec";
 
-        function toggleLoading(show) {
-            document.getElementById('loading').classList.toggle('hidden', !show);
-        }
-
         async function handleLogin() {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
-            if(!user || !pass) return alert("Lengkapi data!");
+            if(!user || !pass) return alert("Isi data!");
 
-            toggleLoading(true);
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'login', username: user, password: pass })
-                });
-                const result = await response.json();
-                
-                if(result.success) {
-                    localStorage.setItem('user_ceklok', result.username);
-                    localStorage.setItem('nama_guru', result.nama);
-                    localStorage.setItem('role', result.role);
-                    localStorage.setItem('list_sekolah', JSON.stringify(result.listSekolah));
-                    renderDashboard();
-                } else {
-                    alert(result.message);
-                }
-            } catch (e) {
-                alert("Gagal terhubung ke server.");
-            } finally { toggleLoading(false); }
+            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username: user, password: pass }) });
+            const res = await resp.json();
+            
+            if(res.success) {
+                localStorage.setItem('user_ceklok', res.username);
+                localStorage.setItem('nama_guru', res.nama);
+                localStorage.setItem('role', res.role);
+                localStorage.setItem('list_sekolah', JSON.stringify(res.listSekolah));
+                location.reload();
+            } else { alert(res.message); }
         }
 
-        function renderDashboard() {
+        function setupUI() {
             const role = localStorage.getItem('role');
-            const user = localStorage.getItem('nama_guru');
-            
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('navbar').classList.remove('hidden');
-            document.getElementById('navInfo').innerText = `${user} (${role})`;
+            if(!role) return;
 
-            if (role === "Admin" || role === "Staff") {
-                document.getElementById('adminSection').classList.remove('hidden');
-                loadAdminData();
-            } 
-            
-            if (role === "Guru" || role === "Admin") { // Admin juga bisa ceklok
-                document.getElementById('guruSection').classList.remove('hidden');
-                setupCeklokForm();
-            }
-        }
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('ceklokBox').classList.remove('hidden');
+            document.getElementById('userNameDisplay').innerText = localStorage.getItem('nama_guru');
+            if(role === 'Admin' || role === 'Staff') document.getElementById('adminLink').classList.remove('hidden');
 
-        function setupCeklokForm() {
             const sekolahs = JSON.parse(localStorage.getItem('list_sekolah'));
-            let html = '<label class="block text-sm font-medium text-slate-600 mb-1">Lokasi Sekolah</label>';
-            
-            if (sekolahs.length > 1) {
+            let html = '<label class="block text-sm font-medium mb-1">Lokasi Sekolah</label>';
+            if(sekolahs.length > 1) {
                 html += `<select id="sekolah_pilihan" class="w-full p-3 border rounded-lg bg-slate-50">
-                            ${sekolahs.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('')}
-                         </select>`;
+                    ${sekolahs.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('')}
+                </select>`;
             } else {
-                html += `<input type="text" id="sekolah_pilihan" value="${sekolahs[0]}" readonly class="w-full p-3 border rounded-lg bg-slate-100 text-slate-500">`;
+                html += `<input type="text" id="sekolah_pilihan" value="${sekolahs[0]}" readonly class="w-full p-3 border rounded-lg bg-slate-100">`;
             }
-            document.getElementById('schoolPickerArea').innerHTML = html;
+            document.getElementById('schoolPicker').innerHTML = html;
             
-            // Set default time
             const now = new Date();
             document.getElementById('jam').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
         }
 
         async function handleSubmit() {
-            toggleLoading(true);
             const data = {
                 action: 'submitPresensi',
                 username: localStorage.getItem('user_ceklok'),
@@ -168,49 +105,12 @@
                 jenis: document.getElementById('jenis').value,
                 jam: document.getElementById('jam').value
             };
-
-            try {
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-                const res = await response.json();
-                if(res.success) {
-                    alert("Presensi Berhasil Dikirim!");
-                    if(localStorage.getItem('role') !== 'Guru') loadAdminData();
-                }
-            } catch (e) { alert("Gagal mengirim data"); }
-            finally { toggleLoading(false); }
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            alert("Presensi Berhasil!");
         }
 
-        async function loadAdminData() {
-            const tbody = document.getElementById('adminTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Memuat data...</td></tr>';
-            
-            try {
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminGetData' }) });
-                const result = await response.json();
-                
-                if(result.success) {
-                    const rows = result.data.slice(1).reverse(); // Balik urutan agar data terbaru di atas
-                    tbody.innerHTML = rows.map(row => `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-3 border-b text-xs">${new Date(row[0]).toLocaleString('id-ID')}</td>
-                            <td class="p-3 border-b font-medium">${row[2]}</td>
-                            <td class="p-3 border-b">${row[3]}</td>
-                            <td class="p-3 border-b">
-                                <span class="px-2 py-1 rounded-full text-xs ${row[4] === 'Masuk' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${row[4]}</span>
-                            </td>
-                            <td class="p-3 border-b font-mono">${row[5]}</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Gagal memuat data.</td></tr>'; }
-        }
-
-        function handleLogout() {
-            localStorage.clear();
-            location.reload();
-        }
-
-        window.onload = () => { if(localStorage.getItem('user_ceklok')) renderDashboard(); };
+        function handleLogout() { localStorage.clear(); location.reload(); }
+        window.onload = setupUI;
     </script>
 </body>
 </html>
