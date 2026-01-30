@@ -3,165 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulir Kehadiran - MTS TANUNTUNG</title>
+    <title>Ceklok Guru - Firebase Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans">
+<body class="bg-slate-50 min-h-screen p-4">
 
     <div id="loginSection" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-3xl shadow-xl">
-        <h2 class="text-2xl font-bold text-center mb-6">Login Guru</h2>
+        <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">Login Firebase</h2>
         <div class="space-y-4">
-            <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">MASUK</button>
+            <input type="text" id="username" placeholder="Username (NIP)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-orange-500">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-orange-500">
+            <button id="btnLogin" class="w-full bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg">MASUK</button>
         </div>
     </div>
 
-    <div id="timesheetSection" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-3xl shadow-2xl">
+    <div id="timesheetSection" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-3xl shadow-2xl border border-white">
         <div class="flex justify-between items-center mb-6">
-            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">◀</button>
+            <button id="prevBtn" class="px-5 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">◀</button>
             <div class="text-center">
-                <h2 id="displayMonthYear" class="text-2xl font-bold text-slate-800 uppercase">Januari 2026</h2>
-                <p id="schoolTitle" class="text-xs text-blue-600 font-bold tracking-widest"></p>
+                <h2 id="displayMonthYear" class="text-2xl font-bold text-slate-800"></h2>
+                <p id="schoolTitle" class="text-xs text-orange-600 font-bold tracking-widest uppercase"></p>
             </div>
-            <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">▶</button>
+            <button id="nextBtn" class="px-5 py-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition">▶</button>
         </div>
 
-        <div class="overflow-x-auto rounded-2xl border border-slate-200 min-h-[400px]">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
-                    <tr>
-                        <th class="p-4">Tanggal</th>
-                        <th class="p-4 text-center">Masuk</th>
-                        <th class="p-4 text-center">Pulang</th>
-                        <th class="p-4">Keterangan</th>
-                        <th class="p-4 text-center">Aksi</th>
-                    </tr>
+        <div class="overflow-x-auto rounded-2xl border">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold">
+                    <tr><th class="p-4">Tanggal</th><th class="p-4 text-center">Masuk</th><th class="p-4 text-center">Pulang</th><th class="p-4">Keterangan</th><th class="p-4 text-center">Aksi</th></tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
             </table>
         </div>
 
-        <button onclick="saveAll()" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-700 transition">💾 Simpan Perubahan</button>
-        <div class="mt-4 flex justify-between px-2">
-            <button onclick="localStorage.clear(); location.reload();" class="text-xs text-red-400 underline italic">Logout</button>
-            <a id="adminLink" href="dashboard.html" class="hidden text-xs text-blue-500 font-bold uppercase tracking-tight">Dashboard Admin →</a>
-        </div>
+        <button id="btnSave" class="w-full mt-6 bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-orange-700 transition">💾 SIMPAN SEMUA PERUBAHAN</button>
+        <button onclick="localStorage.clear(); location.reload();" class="w-full mt-4 text-xs text-slate-400 underline">Logout</button>
     </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3arGeenezphWGIMMoHJCBA2TG2jyzYiOsiB_P4PZPrfWSXpV_dQbDV13uf6UIqEel/exec";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. MASUKKAN KONFIGURASI FIREBASE ANDA DI SINI
+        const firebaseConfig = {
+            apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
+            authDomain: "cekloknewversion.firebaseapp.com",
+            projectId: "cekloknewversion",
+            storageBucket: "cekloknewversion.firebasestorage.app",
+            messagingSenderId: "602084220497",
+            appId: "1:602084220497:web:ac20adef8bb50acef56270"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let currentDate = new Date();
-        let ketOptions = [];
-        let cacheData = {}; // CLIENT-SIDE CACHE
+        let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur"]; // Bisa diambil dari Firestore
 
-        async function handleLogin() {
-            const user = id('username').value;
-            const pass = id('password').value;
-            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username: user, password: pass }) });
-            const res = await r.json();
-            if(res.success) {
-                localStorage.setItem('user_ceklok', res.username);
-                localStorage.setItem('nama_guru', res.nama);
-                localStorage.setItem('role', res.role);
-                localStorage.setItem('list_sekolah', JSON.stringify(res.listSekolah));
+        // --- FUNGSI LOGIN ---
+        window.handleLogin = async () => {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            const userDoc = await getDoc(doc(db, "users", user));
+            if (userDoc.exists() && userDoc.data().password === pass) {
+                const data = userDoc.data();
+                localStorage.setItem('user_ceklok', user);
+                localStorage.setItem('nama_guru', data.nama);
+                localStorage.setItem('role', data.role);
+                localStorage.setItem('sekolah', JSON.stringify(data.sekolah));
                 location.reload();
-            } else { alert(res.message); }
-        }
+            } else {
+                alert("Login Gagal!");
+            }
+        };
 
-        async function loadTimesheet() {
+        // --- FUNGSI RENDER TABEL ---
+        async function loadData() {
             const user = localStorage.getItem('user_ceklok');
             if(!user) return;
-            id('loginSection').classList.add('hidden');
-            id('timesheetSection').classList.remove('hidden');
-            if(localStorage.getItem('role') !== 'Guru') id('adminLink').classList.remove('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('timesheetSection').classList.remove('hidden');
 
-            const month = currentDate.getMonth();
-            const year = currentDate.getFullYear();
-            const cacheKey = `${user}-${month}-${year}`;
-            
-            updateHeader(month, year);
-
-            // Jika ada di cache, tampilkan instan
-            if(cacheData[cacheKey]) {
-                renderTable(cacheData[cacheKey].logs);
-            } else {
-                id('tableBody').innerHTML = '<tr><td colspan="5" class="p-20 text-center italic text-slate-400">Sinkronisasi data...</td></tr>';
-            }
-
-            // Tetap fetch terbaru di background
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getMonthlyData', username: user, month: month, year: year }) });
-            const res = await resp.json();
-            if(res.success) {
-                ketOptions = res.options;
-                cacheData[cacheKey] = res; // Simpan ke cache
-                renderTable(res.logs);
-            }
-        }
-
-        function updateHeader(m, y) {
+            const m = currentDate.getMonth(), y = currentDate.getFullYear();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            id('displayMonthYear').innerText = `${monthNames[m]} ${y}`;
-            id('schoolTitle').innerText = "UNIT: " + JSON.parse(localStorage.getItem('list_sekolah'))[0];
+            document.getElementById('displayMonthYear').innerText = `${monthNames[m]} ${y}`;
+            document.getElementById('schoolTitle').innerText = JSON.parse(localStorage.getItem('sekolah'))[0];
+
+            // Ambil data dari Firebase Firestore
+            const q = query(collection(db, "presensi"), where("username", "==", user));
+            const querySnapshot = await getDocs(q);
+            const logs = [];
+            querySnapshot.forEach(doc => logs.push(doc.data()));
+
+            renderTable(logs);
         }
 
         function renderTable(logs) {
-            const tbody = id('tableBody');
+            const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            const days = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            const m = currentDate.getMonth(), y = currentDate.getFullYear();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-            for (let d = 1; d <= days; d++) {
-                const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(y, m, d);
                 const isSun = dateObj.getDay() === 0;
-                const log = logs.find(l => new Date(l[0]).getDate() === d) || {};
-                const isDisStatus = log[6] && log[6] !== "" && log[6] !== "Hadir";
-                const fullDate = `${currentDate.getFullYear()}-${(currentDate.getMonth()+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-
+                const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                const log = logs.find(l => l.tanggal === dateKey) || {};
+                
                 tbody.innerHTML += `
                     <tr class="${isSun ? 'bg-red-50' : ''}">
-                        <td class="p-4 font-medium ${isSun ? 'text-red-500' : 'text-slate-700'}">${d} <span class="text-[10px] text-slate-400 lowercase">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
-                        <td class="p-2 text-center"><input type="text" placeholder="HH:MM" value="${log[4]||''}" ${isSun || isDisStatus ? 'disabled' : ''} class="row-masuk w-20 p-2 border rounded-xl text-center text-sm ${isSun || isDisStatus ? 'bg-gray-100 cursor-not-allowed' : ''}"></td>
-                        <td class="p-2 text-center"><input type="text" placeholder="HH:MM" value="${log[5]||''}" ${isSun || isDisStatus ? 'disabled' : ''} class="row-pulang w-20 p-2 border rounded-xl text-center text-sm ${isSun || isDisStatus ? 'bg-gray-100 cursor-not-allowed' : ''}"></td>
+                        <td class="p-4 font-bold ${isSun ? 'text-red-500' : ''}">${d}</td>
+                        <td class="p-2 text-center"><input type="text" value="${log.masuk||''}" ${isSun ? 'disabled' : ''} class="row-m w-16 p-2 border rounded-xl text-center text-xs ${isSun ? 'bg-gray-100' : ''}"></td>
+                        <td class="p-2 text-center"><input type="text" value="${log.pulang||''}" ${isSun ? 'disabled' : ''} class="row-p w-16 p-2 border rounded-xl text-center text-xs ${isSun ? 'bg-gray-100' : ''}"></td>
                         <td class="p-2">
-                            <select onchange="handleStatusChange(this)" ${isSun ? 'disabled' : ''} class="row-ket w-full p-2 border rounded-xl text-sm ${isSun ? 'bg-gray-100' : ''}">
-                                <option value="">Hadir</option>
-                                ${ketOptions.map(o => `<option value="${o}" ${log[6]==o?'selected':''}>${o}</option>`).join('')}
+                            <select class="row-k w-full p-2 border rounded-xl text-xs ${isSun ? 'bg-gray-100' : ''}" ${isSun ? 'disabled' : ''}>
+                                ${ketOptions.map(o => `<option value="${o}" ${log.keterangan==o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </td>
-                        <td class="p-2 text-center"><button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} class="text-red-400 font-bold">×</button><input type="hidden" class="row-date" value="${fullDate}"></td>
+                        <td class="p-2 text-center"><input type="hidden" class="row-d" value="${dateKey}"><button onclick="this.closest('tr').querySelectorAll('input,select').forEach(i=>i.value='')" class="text-red-400">×</button></td>
                     </tr>`;
             }
         }
 
-        function handleStatusChange(el) {
-            const tr = el.closest('tr');
-            const m = tr.querySelector('.row-masuk'), p = tr.querySelector('.row-pulang');
-            const isOff = el.value !== "" && el.value !== "Hadir";
-            m.value = isOff ? "" : m.value; p.value = isOff ? "" : p.value;
-            m.disabled = p.disabled = isOff;
-            m.classList.toggle('bg-gray-100', isOff); p.classList.toggle('bg-gray-100', isOff);
-        }
+        window.saveAll = async () => {
+            const user = localStorage.getItem('user_ceklok');
+            const rows = document.querySelectorAll('#tableBody tr');
+            for(let tr of rows) {
+                const date = tr.querySelector('.row-d').value;
+                const m = tr.querySelector('.row-m').value;
+                const p = tr.querySelector('.row-p').value;
+                const k = tr.querySelector('.row-k').value;
 
-        function clearRow(btn) {
-            const tr = btn.closest('tr');
-            tr.querySelectorAll('input:not(.row-date), select').forEach(i => { i.value = ''; i.disabled = false; i.classList.remove('bg-gray-100'); });
-        }
+                if(m || p || k !== "Hadir") {
+                    await setDoc(doc(db, "presensi", `${user}_${date}`), {
+                        username: user, tanggal: date, masuk: m, pulang: p, keterangan: k, nama: localStorage.getItem('nama_guru')
+                    });
+                }
+            }
+            alert("Data Berhasil Sinkron!");
+        };
 
-        async function saveAll() {
-            const rows = [];
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                const m = tr.querySelector('.row-masuk').value, p = tr.querySelector('.row-pulang').value, k = tr.querySelector('.row-ket').value;
-                if(m || p || k) rows.push({ tanggal: tr.querySelector('.row-date').value, masuk: m, pulang: p, keterangan: k });
-            });
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAll', username: localStorage.getItem('user_ceklok'), nama: localStorage.getItem('nama_guru'), sekolah: JSON.parse(localStorage.getItem('list_sekolah'))[0], rows: rows }) });
-            alert("Berhasil!"); 
-            delete cacheData[`${localStorage.getItem('user_ceklok')}-${currentDate.getMonth()}-${currentDate.getFullYear()}`];
-            loadTimesheet();
-        }
+        document.getElementById('btnLogin').onclick = window.handleLogin;
+        document.getElementById('btnSave').onclick = window.saveAll;
+        document.getElementById('prevBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); loadData(); };
+        document.getElementById('nextBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); loadData(); };
 
-        function changeMonth(s) { currentDate.setMonth(currentDate.getMonth() + s); loadTimesheet(); }
-        function id(i) { return document.getElementById(i); }
-        window.onload = loadTimesheet;
+        loadData();
     </script>
 </body>
 </html>
