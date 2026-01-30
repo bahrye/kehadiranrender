@@ -132,65 +132,69 @@
         let masterLogs = [];
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
-        // --- VALIDASI & FORMAT JAM ---
-        // --- VALIDASI JAM REAL-TIME (HH:MM) ---
+        // --- VALIDASI JAM PINTAR (HH:MM) ---
         window.handleTimeInput = (el) => {
-            let cursorP = el.selectionStart;
+            // Simpan nilai lama untuk mendeteksi aksi hapus (backspace)
+            if (el.lastValue === undefined) el.lastValue = "";
+            const isDeleting = el.value.length < el.lastValue.length;
             let val = el.value;
         
-            // 1. Deteksi jika user mengetik titik (.) atau titik dua (:) secara manual
-            // Contoh: User mengetik "1." atau "1:"
-            if (val.includes('.') || (val.includes(':') && val.length <= 3)) {
-                let numericPart = val.replace(/[:.]/g, '');
-                if (numericPart.length === 1) {
-                    // Ubah "1." atau "1:" menjadi "01:"
-                    el.value = "0" + numericPart + ":";
+            // 1. Fitur Pintar: Deteksi "." atau ":" manual
+            // Contoh: Ketik "1." atau "1:" -> jadi "01:"
+            if (!isDeleting && (val.endsWith('.') || val.endsWith(':'))) {
+                let numeric = val.replace(/[:.]/g, '');
+                if (numeric.length === 1) {
+                    el.value = "0" + numeric + ":";
+                    el.lastValue = el.value;
                     return;
-                } else if (numericPart.length === 2) {
-                    // Ubah "21." atau "21:" menjadi "21:"
-                    el.value = numericPart + ":";
+                } else if (numeric.length === 2) {
+                    el.value = numeric + ":";
+                    el.lastValue = el.value;
                     return;
                 }
             }
         
-            // 2. Bersihkan input hanya untuk angka saja untuk validasi digit
-            let cleanVal = val.replace(/\D/g, '');
-            if (cleanVal.length > 4) cleanVal = cleanVal.substring(0, 4);
+            // 2. Bersihkan input hanya angka
+            let nums = val.replace(/\D/g, '');
+            if (nums.length > 4) nums = nums.substring(0, 4);
         
             let validated = "";
         
-            // Digit 1 (Jam puluhan: 0-2)
-            if (cleanVal.length >= 1) {
-                const d1 = parseInt(cleanVal[0]);
-                if (d1 <= 2) validated += cleanVal[0];
+            // Validasi Jam (00-23)
+            if (nums.length >= 1) {
+                const d1 = parseInt(nums[0]);
+                if (d1 <= 2) validated += nums[0]; // Hanya terima 0, 1, 2 di digit pertama
             }
         
-            // Digit 2 (Jam satuan: jika jam >= 20, max 3)
-            if (cleanVal.length >= 2 && validated.length === 1) {
-                const h = parseInt(validated + cleanVal[1]);
-                if (h <= 23) validated += cleanVal[1];
+            if (nums.length >= 2 && validated.length === 1) {
+                const h = parseInt(validated + nums[1]);
+                if (h <= 23) validated += nums[1]; // Pastikan jam tidak lebih dari 23
             }
         
-            // Digit 3 (Menit puluhan: 0-5)
-            if (cleanVal.length >= 3 && validated.length === 2) {
-                const m1 = parseInt(cleanVal[2]);
-                if (m1 <= 5) validated += cleanVal[2];
+            // Validasi Menit (00-59)
+            if (nums.length >= 3 && validated.length === 2) {
+                const m1 = parseInt(nums[2]);
+                if (m1 <= 5) validated += nums[2]; // Menit puluhan hanya boleh 0-5
             }
         
-            // Digit 4 (Menit satuan)
-            if (cleanVal.length >= 4 && validated.length === 3) {
-                validated += cleanVal[3];
+            if (nums.length >= 4 && validated.length === 3) {
+                validated += nums[3];
             }
         
-            // 3. Output dengan format otomatis
-            if (validated.length >= 2) {
-                el.value = validated.substring(0, 2) + ":" + validated.substring(2);
-            } else {
-                el.value = validated;
+            // 3. Output Format Otomatis
+            let finalValue = validated;
+            if (validated.length > 2) {
+                // Tambahkan titik dua di antara Jam dan Menit
+                finalValue = validated.substring(0, 2) + ":" + validated.substring(2);
+            } else if (validated.length === 2 && !isDeleting) {
+                // Jika baru ketik 2 angka dan TIDAK sedang menghapus, tambah ":" otomatis
+                finalValue = validated + ":";
             }
+        
+            el.value = finalValue;
+            el.lastValue = finalValue; // Simpan untuk pengecekan berikutnya
         };
         
-        // Fungsi pendukung agar saat keluar (blur) format tetap rapi (misal ketik 7 jadi 07:00)
         window.formatTimeBlur = (el) => {
             let val = el.value.trim();
             if (!val) return;
@@ -198,6 +202,7 @@
             let h = (parts[0] || "0").padStart(2, '0');
             let m = (parts[1] || "0").padEnd(2, '0').substring(0, 2);
             el.value = `${h}:${m}`;
+            el.lastValue = el.value;
         };
 
         // --- AUTH ---
