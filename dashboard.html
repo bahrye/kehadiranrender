@@ -3,74 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard Pro</title>
+    <title>Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen">
 
-    <nav class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center px-8">
-        <h1 class="font-bold text-xl">ADMIN PANEL</h1>
-        <div class="flex gap-4 items-center">
-            <button onclick="switchTab('presensi')" class="hover:underline">Presensi</button>
-            <button onclick="switchTab('users')" class="hover:underline">Kelola Guru</button>
-            <button onclick="handleLogout()" class="bg-red-500 px-3 py-1 rounded text-sm">Logout</button>
+    <nav class="bg-indigo-800 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-lg">ADMIN DASHBOARD</h1>
+            <div class="flex gap-4">
+                <button onclick="switchTab('presensi')" class="text-sm px-3 py-1 bg-indigo-700 rounded hover:bg-indigo-600">Data Presensi</button>
+                <button onclick="switchTab('users')" class="text-sm px-3 py-1 bg-indigo-700 rounded hover:bg-indigo-600">Kelola User</button>
+                <button onclick="location.href='index.html'" class="text-sm px-3 py-1 bg-slate-600 rounded">Presensi Guru</button>
+            </div>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto p-6">
         
         <div id="tabPresensi">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Data Presensi Guru</h2>
-                <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm">Export Excel</button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Riwayat Presensi Guru</h2>
+                <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium shadow-md">Export Excel</button>
             </div>
             <div class="bg-white rounded-xl shadow overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                    <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
                         <tr>
                             <th class="p-4">Waktu</th><th class="p-4">Nama Guru</th><th class="p-4">Sekolah</th><th class="p-4">Status</th><th class="p-4">Jam</th>
                         </tr>
                     </thead>
-                    <tbody id="tablePresensi" class="text-sm divide-y"></tbody>
+                    <tbody id="listPresensi" class="divide-y text-sm"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="tabUsers" class="hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Daftar Guru & Staff</h2>
-                <button onclick="toggleModal(true)" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm">+ Tambah Akun</button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Manajemen Pengguna</h2>
+                <button onclick="toggleModal(true)" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium shadow-md">+ User Baru</button>
             </div>
             <div class="bg-white rounded-xl shadow overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                    <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
                         <tr>
-                            <th class="p-4">Username</th><th class="p-4">Nama Lengkap</th><th class="p-4">Role</th><th class="p-4">Sekolah</th><th class="p-4">Aksi</th>
+                            <th class="p-4 text-center">NIP/User</th><th class="p-4">Nama Lengkap</th><th class="p-4">Role</th><th class="p-4">Sekolah</th><th class="p-4">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="tableUsers" class="text-sm divide-y"></tbody>
+                    <tbody id="listUsers" class="divide-y text-sm"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="modalUser" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-xl w-full max-w-md">
-            <h3 class="font-bold text-lg mb-4">Tambah Pengguna Baru</h3>
-            <div class="space-y-3">
-                <input type="text" id="newUsername" placeholder="Username (NIP)" class="w-full p-2 border rounded">
-                <input type="password" id="newPassword" placeholder="Password" class="w-full p-2 border rounded">
-                <input type="text" id="newNama" placeholder="Nama Lengkap" class="w-full p-2 border rounded">
-                <select id="newRole" class="w-full p-2 border rounded">
+    <div id="modalUser" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <h3 class="font-bold text-xl mb-6 text-slate-800">Tambah Akun Baru</h3>
+            <div class="space-y-4">
+                <input type="text" id="nu" placeholder="NIP / Username" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="np" placeholder="Password" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="nn" placeholder="Nama Lengkap" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                <select id="nr" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
                     <option value="Guru">Guru</option>
                     <option value="Staff">Staff</option>
                     <option value="Admin">Admin</option>
                 </select>
-                <input type="text" id="newSekolah" placeholder="Nama Sekolah (pisahkan koma jika > 1)" class="w-full p-2 border rounded">
-                <div class="flex gap-2 pt-4">
-                    <button onclick="saveUser()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Simpan</button>
-                    <button onclick="toggleModal(false)" class="flex-1 bg-slate-200 py-2 rounded">Batal</button>
+                <input type="text" id="ns" placeholder="Sekolah (pisahkan koma jika > 1)" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex gap-3 mt-6">
+                    <button onclick="saveUser()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">Simpan</button>
+                    <button onclick="toggleModal(false)" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Batal</button>
                 </div>
             </div>
         </div>
@@ -78,68 +80,66 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtNxnMl0918mL7yRjFNm_57c87WqiIZsCDCJ4I8vGF0Ryv1xH4fZs8VRxLhP-NrRiV/exec";
-        let logsData = [];
+        let fullData = [];
 
-        async function fetchData() {
-            const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminGetData' }) });
-            const result = await resp.json();
-            if(result.success) {
-                logsData = result.data.slice(1);
-                renderPresensi(logsData);
-                renderUsers(result.users.slice(1));
+        async function loadData() {
+            const role = localStorage.getItem('role');
+            if(role !== 'Admin' && role !== 'Staff') return location.href='index.html';
+
+            const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminGetData' }) });
+            const res = await r.json();
+            if(res.success) {
+                fullData = res.data.slice(1);
+                renderPresensi(fullData);
+                renderUsers(res.users.slice(1));
             }
         }
 
-        function renderPresensi(data) {
-            document.getElementById('tablePresensi').innerHTML = data.reverse().map(r => `
-                <tr>
-                    <td class="p-4 text-xs">${new Date(r[0]).toLocaleString()}</td>
-                    <td class="p-4 font-bold">${r[2]}</td>
+        function renderPresensi(d) {
+            document.getElementById('listPresensi').innerHTML = d.reverse().map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 text-xs font-mono">${new Date(r[0]).toLocaleString('id-ID')}</td>
+                    <td class="p-4 font-bold text-slate-700">${r[2]}</td>
                     <td class="p-4">${r[3]}</td>
-                    <td class="p-4"><span class="px-2 py-1 rounded text-xs ${r[4]=='Masuk'?'bg-green-100':'bg-orange-100'}">${r[4]}</span></td>
-                    <td class="p-4 font-mono">${r[5]}</td>
-                </tr>
-            `).join('');
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${r[4]=='Masuk'?'bg-emerald-100 text-emerald-700':'bg-orange-100 text-orange-700'}">${r[4]}</span></td>
+                    <td class="p-4 font-bold text-indigo-600">${r[5]}</td>
+                </tr>`).join('');
         }
 
-        function renderUsers(users) {
-            document.getElementById('tableUsers').innerHTML = users.map(u => `
-                <tr>
-                    <td class="p-4">${u[0]}</td><td class="p-4 font-bold">${u[2]}</td><td class="p-4">${u[3]}</td><td class="p-4">${u[4]}</td>
-                    <td class="p-4"><button onclick="deleteUser('${u[0]}')" class="text-red-500 hover:underline">Hapus</button></td>
-                </tr>
-            `).join('');
+        function renderUsers(u) {
+            document.getElementById('listUsers').innerHTML = u.map(i => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 text-center font-mono">${i[0]}</td><td class="p-4 font-bold">${i[2]}</td><td class="p-4 text-xs font-bold uppercase">${i[3]}</td><td class="p-4 text-xs">${i[4]}</td>
+                    <td class="p-4"><button onclick="delUser('${i[0]}')" class="text-red-500 font-bold hover:underline">Hapus</button></td>
+                </tr>`).join('');
         }
 
         async function saveUser() {
-            const data = {
-                action: 'addUser',
-                newUsername: document.getElementById('newUsername').value,
-                newPassword: document.getElementById('newPassword').value,
-                newNama: document.getElementById('newNama').value,
-                newRole: document.getElementById('newRole').value,
-                newSekolah: document.getElementById('newSekolah').value
-            };
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            alert("User Ditambahkan!");
+            const obj = { action: 'addUser', newUsername: id('nu').value, newPassword: id('np').value, newNama: id('nn').value, newRole: id('nr').value, newSekolah: id('ns').value };
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(obj) });
+            alert("Berhasil!"); location.reload();
+        }
+
+        async function delUser(un) {
+            if(!confirm("Hapus akun " + un + "?")) return;
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteUser', targetUser: un }) });
             location.reload();
         }
 
-        async function deleteUser(username) {
-            if(!confirm("Hapus user " + username + "?")) return;
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteUser', targetUser: username }) });
-            location.reload();
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(fullData.map(r => ({ "Waktu": r[0], "Guru": r[2], "Sekolah": r[3], "Status": r[4], "Jam": r[5] })));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+            XLSX.writeFile(wb, "Laporan_Presensi.xlsx");
         }
 
-        function switchTab(tab) {
-            document.getElementById('tabPresensi').classList.toggle('hidden', tab !== 'presensi');
-            document.getElementById('tabUsers').classList.toggle('hidden', tab !== 'users');
+        function switchTab(t) {
+            id('tabPresensi').classList.toggle('hidden', t !== 'presensi');
+            id('tabUsers').classList.toggle('hidden', t !== 'users');
         }
 
-        function toggleModal(show) { document.getElementById('modalUser').classList.toggle('hidden', !show); }
-        function handleLogout() { localStorage.clear(); location.href='index.html'; }
-        
-        window.onload = fetchData;
+        function toggleModal(s) { id('modalUser').classList.toggle('hidden', !s); }
+        function id(i) { return document.getElementById(i); }
+        window.onload = loadData;
     </script>
 </body>
 </html>
