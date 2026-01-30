@@ -117,7 +117,7 @@
 
         window.downloadPDFAllGuru = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4'); // Format Landscape [cite: 1]
+            const doc = new jsPDF('l', 'mm', 'a4'); // Format Landscape 
             const now = new Date();
             const m = now.getMonth();
             const y = now.getFullYear();
@@ -125,14 +125,14 @@
             const periode = `${mNames[m]} ${y}`;
             const daysInMonth = new Date(y, m + 1, 0).getDate();
         
-            // 1. Judul dan Header 
+            // 1. Judul dan Header Laporan 
             doc.setFontSize(14);
             doc.text("Lap. Detail Absensi", 148, 12, { align: "center" });
             doc.setFontSize(9);
             doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 20, 20);
             doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
         
-            // 2. Persiapan Header Tabel (Angka 1-30/31) 
+            // 2. Header Tabel (Angka Tanggal 1-30/31) 
             const tableHeader = ['']; 
             for (let i = 1; i <= daysInMonth; i++) {
                 tableHeader.push(i.toString());
@@ -140,25 +140,31 @@
         
             const tableRows = [];
             
-            // 3. Iterasi Guru untuk Membuat 2 Baris per User 
-            allUsers.filter(u => u.role === 'Guru').forEach((guru) => {
-                // --- BARIS 1: ID, Nama, dan Dept ---
+            // 3. Iterasi Guru 
+            allUsers.filter(u => u.role === 'Guru').forEach((userObj) => {
+                // --- BARIS 1: ID, Nama, dan Dept (Menggunakan colSpan) 
                 const infoRow = [
-                    { content: `ID: ${guru.id}      Nama: ${guru.nama}      Dept.: MTS~TANUNTUNG`, colSpan: daysInMonth + 1, styles: { halign: 'left', fillColor: [255, 255, 255], fontStyle: 'bold' } }
+                    { 
+                        content: `ID: ${userObj.id}      Nama: ${userObj.nama}      Dept.: MTS~TANUNTUNG`, 
+                        colSpan: daysInMonth + 1, 
+                        styles: { halign: 'left', fillColor: [255, 255, 255], fontStyle: 'bold' } 
+                    }
                 ];
                 tableRows.push(infoRow);
         
-                // --- BARIS 2: Data Jam Masuk & Pulang ---
-                const dataRow = ['']; // Kolom kosong di awal (di bawah ID/Nama)
+                // --- BARIS 2: Data Jam Masuk & Pulang (Bertumpuk) 
+                const dataRow = ['']; 
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateKey = `${y}-${(m+1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-                    const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                    const log = allLogs.find(l => l.username === userObj.id && l.tanggal === dateKey);
                     
-                    if (log && log.masuk) {
-                        // Menggabungkan jam masuk dan pulang dengan baris baru (line break) 
-                        dataRow.push(`${log.masuk}\n${log.pulang || ''}`);
-                    } else if (log && log.keterangan !== 'Hadir') {
-                        dataRow.push(log.keterangan);
+                    if (log) {
+                        if (log.keterangan && log.keterangan !== 'Hadir') {
+                            dataRow.push(log.keterangan); // Menampilkan status (Izin/Sakit/dll) [cite: 1]
+                        } else {
+                            // Menampilkan jam masuk di atas dan jam pulang di bawah 
+                            dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`);
+                        }
                     } else {
                         dataRow.push("");
                     }
@@ -166,7 +172,7 @@
                 tableRows.push(dataRow);
             });
         
-            // 4. Konfigurasi Tampilan Tabel 
+            // 4. Konfigurasi Tampilan Tabel agar Identik dengan Gambar 
             doc.autoTable({
                 startY: 25,
                 head: [tableHeader],
@@ -174,12 +180,13 @@
                 theme: 'grid',
                 styles: {
                     fontSize: 6,
-                    cellPadding: 1,
+                    cellPadding: 0.5,
                     halign: 'center',
                     valign: 'middle',
                     lineWidth: 0.1,
                     lineColor: [0, 0, 0],
-                    textColor: [0, 0, 0]
+                    textColor: [0, 0, 0],
+                    minCellHeight: 8 // Memberikan ruang untuk teks bertumpuk
                 },
                 headStyles: {
                     fillColor: [255, 255, 255],
@@ -188,12 +195,13 @@
                     lineWidth: 0.1
                 },
                 columnStyles: {
-                    0: { cellWidth: 5 } // Kolom pertama dibuat sempit
+                    0: { cellWidth: 5 }
                 },
                 margin: { left: 10, right: 10 }
             });
         
-            doc.save(`Rekap_Absensi_${guru.nama || 'Guru'}_${periode}.pdf`);
+            // Perbaikan Error: Menggunakan variabel 'periode' untuk nama file 
+            doc.save(`Tabulasi_Absensi_Sekolah_${periode}.pdf`);
         };
 
         window.delU = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "users", id)); };
