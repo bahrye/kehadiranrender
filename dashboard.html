@@ -274,6 +274,13 @@
             doc.save(`Tabulasi_Absensi_Sekolah_${periode}.pdf`);
         };
 
+        // Cek akses di dashboard.html
+        const role = localStorage.getItem('role');
+        if (role !== 'Admin') {
+            alert("Akses Terbatas! Anda bukan Admin.");
+            window.location.href = "index.html";
+        }
+
         window.delU = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "users", id)); };
         window.switchTab = (t) => { document.getElementById('tabP').classList.toggle('hidden', t!=='p'); document.getElementById('tabU').classList.toggle('hidden', t!=='u'); };
     </script>
