@@ -271,7 +271,11 @@
                         </td>
                         <td class="p-2 col-ket">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs">
-                                ${ketOptions.map(o => `<option value="${o}" ${log.keterangan === o ? 'selected' : (o === 'Hadir' && !log.keterangan ? 'selected' : '')}>${o}</option>`).join('')}
+                                ${ketOptions.map(o => {
+                                    // Cek apakah opsi ini sesuai dengan yang tersimpan di log presensi
+                                    const isSelected = log.keterangan === o ? 'selected' : '';
+                                    return `<option value="${o}" ${isSelected}>${o}</option>`;
+                                }).join('')}
                             </select>
                         </td>
                         <td class="p-2 col-aks">
