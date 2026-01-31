@@ -397,6 +397,13 @@
 
             doc.save(`Tabulasi_Absensi_${mNames[selM]}_${selY}.pdf`);
         };
+
+        let opsiKeterangan = [];
+        onSnapshot(doc(db, "metadata", "keterangan_list"), (docSnap) => {
+            if (docSnap.exists()) {
+                opsiKeterangan = docSnap.data().opsi || [];
+            }
+        });
     </script>
 </body>
 </html>
