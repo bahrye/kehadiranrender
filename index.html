@@ -223,113 +223,133 @@
         // PDF TABULASI FINGERPRINT FORMAT
         window.downloadTabulasiDept = async () => {
             const { jsPDF } = window.jspdf;
-            // Menggunakan orientasi Landscape (L) agar muat 30-31 kolom
+            // Orientasi Landscape A4 agar muat 31 kolom
             const doc = new jsPDF('l', 'mm', 'a4');
-            const unitTarget = selectedSchool; // Mengambil sekolah yang sedang aktif
             
-            if (!unitTarget) return alert("Unit tidak ditemukan!");
+            // Ambil data unit dari localStorage (seperti di kode Firebase Anda sebelumnya)
+            const sekolahData = localStorage.getItem('sekolah');
+            const unitTarget = sekolahData ? JSON.parse(sekolahData)[0] : "";
             
+            if (!unitTarget) return alert("Unit sekolah tidak ditemukan!");
+        
             const m = currentDate.getMonth();
             const y = currentDate.getFullYear();
             const daysInMonth = new Date(y, m + 1, 0).getDate();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
-            displayMessage(null, 'Sedang memproses tabulasi departemen...', { isProcessing: true });
-            
+            toggleLoading(true);
+        
             try {
-                // Ambil data Guru dan Presensi dari server (Google Apps Script)
-                // Kita menggunakan google.script.run untuk mendapatkan data terbaru
-                google.script.run.withSuccessHandler(async (response) => {
-                    if (!response.success) {
-                        displayMessage(null, "Gagal mengambil data: " + response.error);
-                        return;
+                // 1. Ambil Semua Guru yang satu unit/departemen dari Firestore
+                const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
+                const snapUser = await getDocs(qUser);
+                let deptGurus = [];
+                snapUser.forEach(d => {
+                    const data = d.data();
+                    if (data.sekolah && data.sekolah[0] === unitTarget) {
+                        deptGurus.push({ id: d.id, ...data });
                     }
+                });
         
-                    const gurus = response.gurus; // Daftar guru di unit ini
-                    const allLogs = response.attendanceData; // Data absensi semua guru
+                // Urutkan Guru berdasarkan ID (numerik)
+                deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
         
-                    // Header Laporan sesuai format Fingerprint
-                    doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
-                    doc.setFontSize(8).setFont("helvetica", "normal");
-                    doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 12, 20);
-                    doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+                // 2. Ambil Semua Log Presensi dari Firestore
+                const snapPresensi = await getDocs(collection(db, "presensi"));
+                let allLogs = [];
+                snapPresensi.forEach(d => allLogs.push(d.data()));
         
-                    // Membuat Header Tanggal 1 - 30/31
-                    const tableHeader = ['']; 
-                    for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
-        
-                    const tableRows = [];
-                    gurus.forEach((guru) => {
-                        // BARIS 1: Info Guru (ID di kolom 1, Nama di kolom 9, Dept di kolom 19)
-                        const infoRow = new Array(32).fill("");
-                        infoRow[0] = "ID:";
-                        infoRow[2] = guru.id || guru.email.split('@')[0]; // Gunakan ID atau prefix email
-                        infoRow[8] = "Nama:";
-                        infoRow[10] = guru.name;
-                        infoRow[18] = "Dept.:";
-                        infoRow[20] = unitTarget;
-                        tableRows.push(infoRow);
-        
-                        // BARIS 2: Data Jam (Masuk di atas, Pulang di bawah)
-                        const dataRow = [''];
-                        for (let d = 1; d <= 31; d++) {
-                            if (d > daysInMonth) { dataRow.push(""); continue; }
-                            
-                            const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                            const log = allLogs[guru.email] ? allLogs[guru.email][dateKey] : null;
-                            
-                            if (log) {
-                                if (log.reason && log.reason !== "") {
-                                    // Jika ada keterangan (Izin/Sakit), tampilkan teks keterangannya
-                                    dataRow.push({ content: log.reason, styles: { fontSize: 4 } });
-                                } else {
-                                    // Format: Jam Masuk \n Jam Pulang
-                                    const masuk = log.checkIn || "";
-                                    const pulang = log.checkOut || "";
-                                    dataRow.push(`${masuk}\n${pulang}`);
-                                }
-                            } else {
-                                dataRow.push("");
-                            }
-                        }
-                        tableRows.push(dataRow);
-                    });
-        
-                    // Gambar Tabel
-                    doc.autoTable({
-                        startY: 23,
-                        head: [tableHeader],
-                        body: tableRows,
-                        theme: 'grid',
-                        styles: { 
-                            fontSize: 5, 
-                            cellPadding: 0.3, 
-                            halign: 'center', 
-                            valign: 'middle', 
-                            lineWidth: 0.1,
-                            textColor: [0, 0, 0],
-                            lineColor: [0, 0, 0]
-                        },
-                        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
-                        columnStyles: { 0: { cellWidth: 5 } },
-                        margin: { left: 10, right: 10 },
-                        didParseCell: function(data) {
-                            // Membuat baris Info Guru (ID/Nama) terlihat bersih tanpa border vertikal di tengah
-                            if (data.row.index % 2 === 0) {
-                                data.cell.styles.fontStyle = 'bold';
-                                data.cell.styles.halign = 'left';
-                            }
-                        }
-                    });
-        
-                    doc.save(`Tabulasi_Absensi_${unitTarget}_${monthNames[m]}.pdf`);
-                    displayMessage(null, 'Tabulasi berhasil diunduh.', { isSuccess: true });
-                    
-                }).getTabulasiData(currentUser.email, unitTarget, y, m + 1);
+                // --- KONSTRUKSI PDF ---
                 
+                // Judul Laporan
+                doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
+                doc.setFontSize(8).setFont("helvetica", "normal");
+                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
+                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+        
+                // Header Tabel: Angka Tanggal 1 s/d 31
+                const tableHeader = ['']; 
+                for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
+        
+                const tableRows = [];
+                deptGurus.forEach((guru) => {
+                    // BARIS A: Baris Info (ID, Nama, Dept) sesuai posisi kolom fingerprint
+                    const infoRow = new Array(32).fill("");
+                    infoRow[0] = "ID:";
+                    infoRow[2] = guru.id; // Nilai ID di kolom 3 (indeks 2)
+                    infoRow[8] = "Nama:";
+                    infoRow[10] = guru.nama; // Nilai Nama di kolom 11 (indeks 10)
+                    infoRow[18] = "Dept.:";
+                    infoRow[20] = unitTarget; // Nilai Dept di kolom 21 (indeks 20)
+                    tableRows.push(infoRow);
+        
+                    // BARIS B: Baris Jam (Masuk di atas, Pulang di bawah)
+                    const dataRow = [''];
+                    for (let d = 1; d <= 31; d++) {
+                        if (d > daysInMonth) { dataRow.push(""); continue; }
+                        
+                        const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                        // Cari log berdasarkan username guru dan tanggal
+                        const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                        
+                        if (log) {
+                            if (log.keterangan && log.keterangan !== 'Hadir') {
+                                dataRow.push({ content: log.keterangan, styles: { fontSize: 4 } });
+                            } else {
+                                const masuk = log.masuk || "";
+                                const pulang = log.pulang || "";
+                                dataRow.push(`${masuk}\n${pulang}`);
+                            }
+                        } else {
+                            dataRow.push("");
+                        }
+                    }
+                    tableRows.push(dataRow);
+                });
+        
+                // Render Tabel dengan jspdf-autotable
+                doc.autoTable({
+                    startY: 25,
+                    head: [tableHeader],
+                    body: tableRows,
+                    theme: 'grid',
+                    styles: { 
+                        fontSize: 5, 
+                        cellPadding: 0.3, 
+                        halign: 'center', 
+                        valign: 'middle', 
+                        lineWidth: 0.1, 
+                        textColor: [0, 0, 0],
+                        lineColor: [0, 0, 0]
+                    },
+                    headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+                    columnStyles: { 0: { cellWidth: 5 } },
+                    margin: { left: 10, right: 10 },
+                    didParseCell: function(data) {
+                        // Menghilangkan garis vertikal pada baris Info Guru agar terlihat menyatu
+                        if (data.row.index % 2 === 0) {
+                            data.cell.styles.fillColor = [255, 255, 255];
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.halign = 'left';
+                            // Hilangkan border kanan kecuali pada kolom terakhir
+                            if (data.column.index < 31) {
+                                data.cell.styles.lineWidth = { top: 0.1, right: 0, bottom: 0.1, left: 0 };
+                            }
+                        }
+                        // Memberikan garis bawah tebal pada baris Jam sebagai pemisah antar Guru
+                        if (data.row.index % 2 !== 0) {
+                            data.cell.styles.lineWidth = { top: 0.1, right: 0.1, bottom: 0.4, left: 0.1 };
+                        }
+                    }
+                });
+        
+                doc.save(`Tabulasi_${unitTarget}_${monthNames[m]}_${y}.pdf`);
+        
             } catch (err) {
-                displayMessage(null, "Error: " + err.message);
+                console.error(err);
+                alert("Gagal mengunduh tabulasi. Pastikan koneksi internet stabil.");
             }
+            toggleLoading(false);
         };
 
         // SHARED HELPERS
