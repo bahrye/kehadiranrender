@@ -269,7 +269,6 @@
                                 ${isSun || isOff ? 'disabled' : ''} 
                                 class="row-p w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
-                        // Di dalam fungsi renderTable(), cari bagian loop select:
                         <td class="p-2 col-ket">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs">
                                 <option value="Hadir" ${log.keterangan === 'Hadir' || !log.keterangan ? 'selected' : ''}>Hadir</option>
