@@ -31,10 +31,29 @@
     </nav>
     
     <main class="max-w-7xl mx-auto p-8 space-y-8">
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Pilih Bulan Rekap</label>
+                <select id="filterBulan" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                    <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                    <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                    <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
+                </select>
+            </div>
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Tahun</label>
+                <select id="filterTahun" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                </select>
+            </div>
+        </div>
+
         <div id="tabP" class="space-y-6">
             <div class="flex flex-col md:flex-row gap-4">
                 <button onclick="showGlobalSummary()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-4 rounded-3xl font-bold flex items-center justify-center gap-3 hover:bg-slate-50 hover:border-blue-200 transition-all shadow-sm">
-                    <span class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">👤</span>
+                    <span class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">📊</span>
                     Lihat Rekapitulasi Kehadiran
                 </button>
                 <button onclick="downloadPDFAllGuru()" class="bg-blue-600 text-white px-10 py-4 rounded-3xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3">
@@ -78,7 +97,7 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         <tr>
-                            <th class="p-4">Username</th>
+                            <th class="p-4">Username (ID)</th>
                             <th class="p-4">Nama Lengkap</th>
                             <th class="p-4">Role</th>
                             <th class="p-4 text-center">Aksi</th>
@@ -99,7 +118,7 @@
             <div class="space-y-4">
                 <input type="hidden" id="isEditMode" value="false">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username / ID</label>
                     <input type="text" id="modalUsername" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
@@ -129,7 +148,7 @@
     <div id="modalSummary" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl p-8 shadow-2xl space-y-6">
             <div class="flex justify-between items-center border-b pb-4">
-                <h3 class="text-2xl font-bold">Ringkasan Bulanan Semua Guru</h3>
+                <h3 id="summaryTitle" class="text-2xl font-bold">Ringkasan Bulanan</h3>
                 <button onclick="document.getElementById('modalSummary').classList.add('hidden')" class="text-slate-400 text-3xl">&times;</button>
             </div>
             <div id="globalSummaryContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -154,24 +173,29 @@
         let allUsers = [], allLogs = [];
 
         // Proteksi Akses
-        const role = localStorage.getItem('role');
-        if (role !== 'Admin') {
+        if (localStorage.getItem('role') !== 'Admin') {
             window.location.href = "index.html";
         }
 
-        // Snapshot Presensi
+        // Inisialisasi Filter ke Bulan & Tahun Saat Ini
+        const now = new Date();
+        document.getElementById('filterBulan').value = now.getMonth();
+        document.getElementById('filterTahun').value = now.getFullYear();
+
+        // Realtime Data
         onSnapshot(query(collection(db, "presensi"), orderBy("tanggal", "desc")), (snap) => {
             allLogs = []; snap.forEach(d => allLogs.push(d.data()));
-            document.getElementById('bodyP').innerHTML = allLogs.map(r => `<tr><td class="p-4 font-mono text-xs">${r.tanggal}</td><td class="p-4 font-bold">${r.nama}</td><td class="p-4 text-center">${r.masuk||'-'}</td><td class="p-4 text-center">${r.pulang||'-'}</td><td class="p-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">${r.keterangan}</span></td></tr>`).join('');
+            document.getElementById('bodyP').innerHTML = allLogs.slice(0, 50).map(r => `<tr><td class="p-4 font-mono text-xs">${r.tanggal}</td><td class="p-4 font-bold">${r.nama}</td><td class="p-4 text-center">${r.masuk||'-'}</td><td class="p-4 text-center">${r.pulang||'-'}</td><td class="p-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">${r.keterangan}</span></td></tr>`).join('');
         });
 
-        // Snapshot Users - Menambahkan Tombol Edit
         onSnapshot(collection(db, "users"), (snap) => {
             allUsers = []; snap.forEach(d => allUsers.push({id: d.id, ...d.data()}));
-            document.getElementById('bodyU').innerHTML = allUsers.map(u => `
+            // Urutkan berdasarkan ID numerik untuk tabel manajemen
+            const sortedU = [...allUsers].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+            document.getElementById('bodyU').innerHTML = sortedU.map(u => `
                 <tr>
-                    <td class="p-4 font-mono">${u.id}</td>
-                    <td class="p-4 font-bold">${u.nama}</td>
+                    <td class="p-4 font-mono font-bold">${u.id}</td>
+                    <td class="p-4">${u.nama}</td>
                     <td class="p-4 text-[10px] font-bold uppercase text-slate-400">${u.role}</td>
                     <td class="p-4 text-center flex justify-center gap-3">
                         <button onclick="window.editU('${u.id}')" class="text-blue-500 font-bold hover:underline">Edit</button>
@@ -180,7 +204,7 @@
                 </tr>`).join('');
         });
 
-        // FUNGSI MODAL USER
+        // Manajemen User
         window.openUserModal = () => {
             document.getElementById('modalTitle').innerText = "Tambah User Baru";
             document.getElementById('isEditMode').value = "false";
@@ -193,19 +217,16 @@
             document.getElementById('userModal').classList.remove('hidden');
         };
 
-        window.closeUserModal = () => {
-            document.getElementById('userModal').classList.add('hidden');
-        };
+        window.closeUserModal = () => document.getElementById('userModal').classList.add('hidden');
 
         window.editU = async (id) => {
-            const userRef = doc(db, "users", id);
-            const userSnap = await getDoc(userRef);
+            const userSnap = await getDoc(doc(db, "users", id));
             if (userSnap.exists()) {
                 const data = userSnap.data();
                 document.getElementById('modalTitle').innerText = "Edit User: " + id;
                 document.getElementById('isEditMode').value = "true";
                 document.getElementById('modalUsername').value = id;
-                document.getElementById('modalUsername').disabled = true; // Username tidak boleh diganti
+                document.getElementById('modalUsername').disabled = true;
                 document.getElementById('modalNama').value = data.nama;
                 document.getElementById('modalPassword').value = data.password;
                 document.getElementById('modalRole').value = data.role;
@@ -221,120 +242,130 @@
             const role = document.getElementById('modalRole').value;
             const sekolah = document.getElementById('modalSekolah').value.trim();
 
-            if(!id || !nama || !pass || !sekolah) {
-                alert("Semua kolom harus diisi!");
-                return;
-            }
+            if(!id || !nama || !pass || !sekolah) return alert("Semua kolom harus diisi!");
 
             try {
-                await setDoc(doc(db, "users", id), {
-                    nama: nama,
-                    password: pass,
-                    role: role,
-                    sekolah: [sekolah]
-                });
-                alert("User berhasil disimpan!");
+                await setDoc(doc(db, "users", id), { nama, password: pass, role, sekolah: [sekolah] });
+                alert("Data berhasil disimpan!");
                 closeUserModal();
-            } catch (err) {
-                console.error(err);
-                alert("Gagal menyimpan user!");
-            }
+            } catch (err) { alert("Gagal menyimpan data!"); }
         };
 
-        // Fungsi Global Lainnya
-        window.delU = async (id) => { if(confirm("Hapus user " + id + "?")) await deleteDoc(doc(db, "users", id)); };
-        window.switchTab = (t) => { document.getElementById('tabP').classList.toggle('hidden', t!=='p'); document.getElementById('tabU').classList.toggle('hidden', t!=='u'); };
+        window.delU = async (id) => { if(confirm(`Hapus user ${id}?`)) await deleteDoc(doc(db, "users", id)); };
+        
+        window.switchTab = (t) => { 
+            document.getElementById('tabP').classList.toggle('hidden', t!=='p'); 
+            document.getElementById('tabU').classList.toggle('hidden', t!=='u'); 
+        };
 
+        // Fungsi Rekapitulasi Global (Berdasarkan Filter)
         window.showGlobalSummary = () => {
+            const selM = parseInt(document.getElementById('filterBulan').value);
+            const selY = parseInt(document.getElementById('filterTahun').value);
+            const mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            
+            document.getElementById('summaryTitle').innerText = `Rekapitulasi: ${mNames[selM]} ${selY}`;
             const container = document.getElementById('globalSummaryContent');
-            container.innerHTML = ''; document.getElementById('modalSummary').classList.remove('hidden');
-            const now = new Date(), y = now.getFullYear(), m = now.getMonth(), mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            const days = new Date(y, m + 1, 0).getDate();
-            let workDays = 0; for(let i=1; i<=days; i++) { if(new Date(y,m,i).getDay() !== 0) workDays++; }
-            allUsers.filter(u => u.role === 'Guru').forEach(guru => {
-                const logs = allLogs.filter(l => l.username === guru.id && new Date(l.tanggal).getMonth() === m);
+            container.innerHTML = ''; 
+            document.getElementById('modalSummary').classList.remove('hidden');
+
+            const daysInMonth = new Date(selY, selM + 1, 0).getDate();
+            let workDays = 0; 
+            for(let i=1; i<=daysInMonth; i++) { if(new Date(selY, selM, i).getDay() !== 0) workDays++; }
+
+            const sortedGurus = allUsers.filter(u => u.role === 'Guru').sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+
+            sortedGurus.forEach(guru => {
+                const logs = allLogs.filter(l => l.username === guru.id && new Date(l.tanggal).getMonth() === selM && new Date(l.tanggal).getFullYear() === selY);
                 let hadir = 0, libur = 0;
-                logs.forEach(l => { if(l.keterangan === 'Hadir' || (!l.keterangan && l.masuk)) hadir++; else if(l.keterangan && l.keterangan.includes('Libur')) libur++; });
-                const alpa = workDays - hadir - libur;
+                logs.forEach(l => { 
+                    if(l.keterangan === 'Hadir' || (!l.keterangan && l.masuk)) hadir++; 
+                    else if(l.keterangan && l.keterangan.includes('Libur')) libur++; 
+                });
+                const alpa = Math.max(0, workDays - hadir - libur);
                 const presentase = workDays > 0 ? Math.round((hadir / (workDays - libur)) * 100) : 0;
-                container.innerHTML += `<div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
+
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
                         <div class="flex items-center gap-4 mb-5">
                             <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl">👤</div>
-                            <div><h4 class="font-bold text-slate-800 leading-tight">${guru.nama}</h4><p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-1">Periode ${mNames[m]}</p></div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 leading-tight">${guru.nama}</h4>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-1">ID: ${guru.id}</p>
+                            </div>
                         </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div class="bg-blue-50/50 p-3 rounded-2xl text-center"><p class="text-blue-600 font-black text-lg">${workDays}</p><p class="text-[9px] text-blue-400 uppercase font-bold">Hari</p></div>
                             <div class="bg-emerald-50/50 p-3 rounded-2xl text-center"><p class="text-emerald-600 font-black text-lg">${hadir}</p><p class="text-[9px] text-emerald-400 uppercase font-bold">Hadir</p></div>
-                            <div class="p-3 rounded-2xl text-center ${alpa > 0 ? 'bg-rose-50 ring-1 ring-rose-100' : 'bg-slate-50/50'}"><p class="${alpa > 0 ? 'text-rose-600' : 'text-slate-600'} font-black text-lg">${alpa}</p><p class="text-[9px] text-slate-400 uppercase font-bold">Alpa</p></div>
+                            <div class="bg-rose-50 p-3 rounded-2xl text-center"><p class="text-rose-600 font-black text-lg">${alpa}</p><p class="text-[9px] text-rose-400 uppercase font-bold">Alpa</p></div>
                         </div>
-                        <div class="mt-5 pt-4 border-t border-slate-50 flex justify-between items-center"><span class="text-[10px] font-bold text-slate-400 uppercase">Produktivitas</span><span class="text-sm font-black ${presentase > 80 ? 'text-emerald-500' : 'text-amber-500'}">${presentase}%</span></div>
-                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden"><div class="h-full ${presentase > 80 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width: ${presentase}%"></div></div>
+                        <div class="mt-5 pt-4 border-t border-slate-50 flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Produktivitas</span>
+                            <span class="text-sm font-black ${presentase > 80 ? 'text-emerald-500' : 'text-amber-500'}">${presentase}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div class="h-full ${presentase > 80 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width: ${presentase}%"></div>
+                        </div>
                     </div>`;
             });
         };
 
+        // CETAK TABULASI PDF (Disesuaikan dengan Gambar Contoh)
         window.downloadPDFAllGuru = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4
-            const now = new Date(), m = now.getMonth(), y = now.getFullYear();
-            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            const selM = parseInt(document.getElementById('filterBulan').value);
+            const selY = parseInt(document.getElementById('filterTahun').value);
+            const daysInMonth = new Date(selY, selM + 1, 0).getDate();
             const mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            const periode = `${mNames[m]} ${y}`;
-        
+            const tglFormatted = (m, d) => `${selY}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+
             // Header Laporan sesuai Gambar
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14).setFont("helvetica", "bold");
             doc.text("Lap. Detail Absensi", 148, 12, { align: "center" });
             
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
-            doc.text(`Tabulasi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
-        
-            // Header Tabel (Angka Tanggal 1-31)
+            doc.setFontSize(9).setFont("helvetica", "normal");
+            doc.text(`Waktu Absensi ${selY}-${(selM+1).toString().padStart(2,'0')}-01 ~ ${selY}-${(selM+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
+            doc.text(`Tabulasi ${selY}-${(selM+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+
+            // Baris Angka Tanggal (Header)
             const tableHeader = ['']; 
             for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
-        
+
             const tableRows = [];
-            
-            // Sortir users berdasarkan ID atau Nama (Koleksi susunan ID)
-            const sortedUsers = [...allUsers].filter(u => u.role === 'Guru').sort((a, b) => a.id.localeCompare(b.id));
-        
-            sortedUsers.forEach((userObj, index) => {
-                // Baris 1: ID, Nama, dan Dept (Sekolah)
-                // Dibuat colspan agar memenuhi lebar tabel
+            // Urutkan Guru berdasarkan ID Numerik (Koleksi ID)
+            const sortedGurus = [...allUsers].filter(u => u.role === 'Guru').sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+
+            sortedGurus.forEach((guru) => {
+                // Baris Info Guru (ID, Nama, Dept)
                 tableRows.push([
                     { 
-                        content: `ID: ${userObj.id}                Nama: ${userObj.nama}                Dept.: ${userObj.sekolah ? userObj.sekolah[0] : 'MTS~TANUNTUNG'}`, 
+                        content: `ID: ${guru.id}                Nama: ${guru.nama}                Dept.: ${guru.sekolah ? guru.sekolah[0] : 'MTS~TANUNTUNG'}`, 
                         colSpan: 32, 
                         styles: { halign: 'left', fillColor: [255, 255, 255], fontStyle: 'bold', lineWidth: 0.1 } 
                     }
                 ]);
-        
-                // Baris 2: Data Jam Masuk dan Pulang
+
+                // Baris Jam Absensi (Masuk di atas, Pulang di bawah)
                 const dataRow = [''];
                 for (let d = 1; d <= 31; d++) {
-                    if (d > daysInMonth) {
-                        dataRow.push("");
-                        continue;
-                    }
-                    const dateKey = `${y}-${(m+1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-                    const log = allLogs.find(l => l.username === userObj.id && l.tanggal === dateKey);
+                    if (d > daysInMonth) { dataRow.push(""); continue; }
+                    
+                    const dateKey = tglFormatted(selM, d);
+                    const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
                     
                     if (log) {
                         if (log.keterangan && log.keterangan !== 'Hadir') {
-                            dataRow.push(log.keterangan);
+                            dataRow.push({ content: log.keterangan, styles: { fontSize: 4.5 } });
                         } else {
-                            // Format Jam Masuk di atas, Jam Pulang di bawah dalam satu cell
                             dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`);
                         }
-                    } else {
-                        dataRow.push("");
-                    }
+                    } else { dataRow.push(""); }
                 }
                 tableRows.push(dataRow);
             });
-        
+
             doc.autoTable({
                 startY: 25,
                 head: [tableHeader],
@@ -347,26 +378,14 @@
                     valign: 'middle', 
                     lineWidth: 0.1, 
                     textColor: [0, 0, 0],
-                    minCellHeight: 4
+                    lineColor: [0, 0, 0]
                 },
-                headStyles: { 
-                    fillColor: [255, 255, 255], 
-                    textColor: [0, 0, 0], 
-                    fontStyle: 'bold',
-                    lineWidth: 0.1
-                },
-                columnStyles: { 
-                    0: { cellWidth: 5 } // Kolom kosong di paling kiri
-                },
-                margin: { left: 10, right: 10 },
-                tableLineWidth: 0.1,
-                didParseCell: function(data) {
-                    // Memberikan border yang lebih konsisten seperti gambar
-                    data.cell.styles.lineColor = [0, 0, 0];
-                }
+                headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 5 } },
+                margin: { left: 10, right: 10 }
             });
-        
-            doc.save(`Tabulasi_Absensi_${periode}.pdf`);
+
+            doc.save(`Tabulasi_Absensi_${mNames[selM]}_${selY}.pdf`);
         };
     </script>
 </body>
