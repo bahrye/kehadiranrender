@@ -442,15 +442,17 @@
             if(!localStorage.getItem('user_ceklok')) return;
             toggleLoading(true);
             
-            // Ambil keterangan dulu baru render sisa UI
-            await fetchKetOptions();
+            // Langkah 1: Ambil data dari Firebase dan tunggu sampai selesai
+            await fetchKetOptions(); 
             
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('timesheetSection').classList.remove('hidden');
             
+            // Langkah 2: Baru jalankan snapshot untuk data presensi
             onSnapshot(query(collection(db, "presensi"), where("username", "==", localStorage.getItem('user_ceklok'))), (s) => {
-                masterLogs = []; s.forEach(d => masterLogs.push(d.data()));
-                renderTable();
+                masterLogs = []; 
+                s.forEach(d => masterLogs.push(d.data()));
+                renderTable(); // Di sini ketOptions sudah pasti terisi data Firebase
                 toggleLoading(false);
             });
         }
