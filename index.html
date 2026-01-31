@@ -10,14 +10,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         .glow-orange { box-shadow: 0 0 20px rgba(251, 146, 60, 0.6); border: 2px solid #fb923c; }
-        
-        /* Mengatur lebar kolom agar konsisten */
         .col-tgl { width: 20%; }
         .col-jam { width: 20%; text-align: center; }
         .col-ket { width: 25%; }
         .col-aks { width: 15%; text-align: center; }
-
-        /* Mempercantik scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
     </style>
@@ -59,11 +55,7 @@
                         </button>
                     </div>
                 </div>
-    
-                <button id="btnLogin" 
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 active:scale-[0.98] transition-all duration-200 mt-4 tracking-wide">
-                    MASUK KE SISTEM
-                </button>
+                <button id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all mt-4 tracking-wide">MASUK KE SISTEM</button>
             </div>
         </div>
     </div>
@@ -102,12 +94,8 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <button onclick="downloadPDFGuru()" class="bg-rose-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-rose-700 transition flex items-center gap-2">
-                <span>📄</span> Rekap Pribadi (PDF)
-            </button>
-            <button id="btnTabulasiDept" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
-                <span>📋</span> Tabulasi Dept (PDF)
-            </button>
+            <button onclick="downloadPDFGuru()" class="bg-rose-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-rose-700 transition flex items-center gap-2"><span>📄</span> Rekap Pribadi</button>
+            <button id="btnTabulasiDept" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2"><span>📋</span> Tabulasi Dept</button>
         </div>
 
         <div class="bg-white rounded-3xl shadow-xl border overflow-hidden flex flex-col" style="max-height: 70vh;">
@@ -125,15 +113,9 @@
                     <tbody id="tableBody" class="divide-y"></tbody>
                 </table>
             </div>
-
             <div class="p-4 bg-slate-50 border-t z-30">
-                <button id="btnSave" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                    <span>💾</span> SIMPAN SEMUA PERUBAHAN
-                </button>
-                <div class="mt-2 flex justify-between px-2 text-[10px]">
-                    <div></div>
-                    <button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button>
-                </div>
+                <button id="btnSave" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-2"><span>💾</span> SIMPAN SEMUA PERUBAHAN</button>
+                <div class="mt-2 flex justify-between px-2 text-[10px]"><div></div><button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button></div>
             </div>
         </div>
     </div>
@@ -158,320 +140,168 @@
         let masterLogs = [];
         let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
 
-        // TOGGLE PASSWORD LOGIC
+        // UI & SECURITY LOGIC
         const passwordInput = document.getElementById('password');
-        const togglePasswordBtn = document.getElementById('togglePassword');
         const eyeIcon = document.getElementById('eyeIcon');
-
-        togglePasswordBtn.onclick = () => {
+        document.getElementById('togglePassword').onclick = () => {
             const isPass = passwordInput.type === 'password';
             passwordInput.type = isPass ? 'text' : 'password';
-            eyeIcon.innerHTML = isPass 
-                ? '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />'
-                : '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />';
+            eyeIcon.innerHTML = isPass ? '<path d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />' : '<path d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />';
         };
 
-        // LOGIN WITH ENTER
-        const loginInputs = [document.getElementById('username'), passwordInput];
-        loginInputs.forEach(input => {
-            input.onkeypress = (e) => { if(e.key === 'Enter') document.getElementById('btnLogin').click(); };
+        [document.getElementById('username'), passwordInput].forEach(inp => {
+            inp.onkeypress = (e) => { if(e.key === 'Enter') document.getElementById('btnLogin').click(); };
         });
 
+        // CORE FUNCTIONS
         window.handleTimeInput = (el) => {
-            if (el.lastValue === undefined) el.lastValue = "";
-            const isDeleting = el.value.length < el.lastValue.length;
-            let val = el.value;
-            if (!isDeleting && (val.endsWith('.') || val.endsWith(':'))) {
-                let numeric = val.replace(/[:.]/g, '');
-                if (numeric.length === 1) { el.value = "0" + numeric + ":"; el.lastValue = el.value; return; }
-                else if (numeric.length === 2) { el.value = numeric + ":"; el.lastValue = el.value; return; }
-            }
-            let nums = val.replace(/\D/g, '');
-            if (nums.length > 4) nums = nums.substring(0, 4);
-            let validated = "";
-            if (nums.length >= 1) { const d1 = parseInt(nums[0]); if (d1 <= 2) validated += nums[0]; }
-            if (nums.length >= 2 && validated.length === 1) { const h = parseInt(validated + nums[1]); if (h <= 23) validated += nums[1]; }
-            if (nums.length >= 3 && validated.length === 2) { const m1 = parseInt(nums[2]); if (m1 <= 5) validated += nums[2]; }
-            if (nums.length >= 4 && validated.length === 3) validated += nums[3];
-            let finalValue = validated;
-            if (validated.length > 2) finalValue = validated.substring(0, 2) + ":" + validated.substring(2);
-            else if (validated.length === 2 && !isDeleting) finalValue = validated + ":";
-            el.value = finalValue;
-            el.lastValue = finalValue;
+            let val = el.value.replace(/\D/g, '').substring(0, 4);
+            if (val.length >= 3) val = val.substring(0, 2) + ":" + val.substring(2);
+            else if (val.length >= 2) val = val + ":";
+            el.value = val;
         };
-        
+
         window.formatTimeBlur = (el) => {
-            let val = el.value.trim(); if (!val) return;
-            let parts = val.split(':');
-            let h = (parts[0] || "0").padStart(2, '0');
-            let m = (parts[1] || "0").padEnd(2, '0').substring(0, 2);
-            el.value = `${h}:${m}`; el.lastValue = el.value;
+            if (!el.value) return;
+            let p = el.value.split(':');
+            el.value = (p[0] || "00").padStart(2, '0') + ":" + (p[1] || "00").padEnd(2, '0').substring(0, 2);
         };
 
         document.getElementById('btnLogin').onclick = async () => {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const u = document.getElementById('username').value, p = passwordInput.value;
             toggleLoading(true);
             try {
-                const userDoc = await getDoc(doc(db, "users", user));
+                const docSnap = await getDoc(doc(db, "users", u));
                 toggleLoading(false);
-                if (userDoc.exists() && userDoc.data().password === pass) {
-                    const data = userDoc.data();
-                    localStorage.setItem('user_ceklok', user);
-                    localStorage.setItem('nama_guru', data.nama);
-                    localStorage.setItem('role', data.role);
-                    localStorage.setItem('sekolah', JSON.stringify(data.sekolah));
-                    if (data.role === 'Admin') { window.location.href = "dashboard.html"; } else { location.reload(); }
-                } else { alert("Login Gagal! Username atau password salah."); }
-            } catch (e) { toggleLoading(false); alert("Error Login!"); }
+                if (docSnap.exists() && docSnap.data().password === p) {
+                    const d = docSnap.data();
+                    localStorage.setItem('user_ceklok', u);
+                    localStorage.setItem('nama_guru', d.nama);
+                    localStorage.setItem('role', d.role);
+                    localStorage.setItem('sekolah', JSON.stringify(d.sekolah));
+                    d.role === 'Admin' ? window.location.href = "dashboard.html" : location.reload();
+                } else alert("Login Gagal!");
+            } catch (e) { toggleLoading(false); alert("Error!"); }
         };
-
-        function initApp() {
-            const user = localStorage.getItem('user_ceklok');
-            const role = localStorage.getItem('role');
-            if(!user) return;
-            if (role === 'Admin') { window.location.href = "dashboard.html"; return; }
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('timesheetSection').classList.remove('hidden');
-            const q = query(collection(db, "presensi"), where("username", "==", user));
-            onSnapshot(q, (snapshot) => {
-                masterLogs = [];
-                snapshot.forEach(doc => masterLogs.push(doc.data()));
-                renderTable();
-            });
-        }
 
         function renderTable() {
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             document.getElementById('displayMonthYear').innerText = `${monthNames[m]} ${y}`;
-            const sekData = localStorage.getItem('sekolah');
-            document.getElementById('schoolTitle').innerText = sekData ? "UNIT: " + JSON.parse(sekData)[0] : "";
+            const sek = localStorage.getItem('sekolah');
+            document.getElementById('schoolTitle').innerText = sek ? "UNIT: " + JSON.parse(sek)[0] : "";
+            
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const days = new Date(y, m + 1, 0).getDate();
             let stats = { work: 0, hadir: 0, libur: 0 };
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateObj = new Date(y, m, d);
-                const isSun = dateObj.getDay() === 0;
+
+            for (let d = 1; d <= days; d++) {
+                const dateObj = new Date(y, m, d), isSun = dateObj.getDay() === 0;
                 const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
                 const log = masterLogs.find(l => l.tanggal === dateKey) || {};
                 const isOff = log.keterangan && log.keterangan !== "Hadir";
+
                 if(!isSun) {
                     stats.work++;
                     if(log.keterangan === "Hadir" || (!log.keterangan && log.masuk)) stats.hadir++;
-                    else if(log.keterangan && log.keterangan.includes("Libur")) stats.libur++;
+                    else if(log.keterangan?.includes("Libur")) stats.libur++;
                 }
+
                 tbody.innerHTML += `
-                    <tr class="${isSun ? 'bg-red-50/50' : 'hover:bg-slate-50 transition-colors'}">
-                        <td class="p-4 font-bold col-tgl ${isSun ? 'text-red-500' : 'text-slate-700'}">
-                            ${d} <span class="text-[10px] text-slate-400 font-medium">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span>
-                        </td>
-                        <td class="p-2 text-center col-jam">
-                            <input type="text" placeholder="HH:MM" onfocus="this.lastValue = this.value" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" 
-                                value="${log.masuk || ''}" ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-m w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
-                        </td>
-                        <td class="p-2 text-center col-jam">
-                            <input type="text" placeholder="HH:MM" onfocus="this.lastValue = this.value" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" 
-                                value="${log.pulang || ''}" ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-p w-20 p-2 border border-slate-200 rounded-xl text-center text-xs font-mono placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun || isOff ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
-                        </td>
-                        <td class="p-2 col-ket">
-                            <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} 
-                                class="row-k w-full p-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isSun ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-700 shadow-sm'}">
-                                <option value="Hadir">Hadir</option>
-                                ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}
-                            </select>
-                        </td>
-                        <td class="p-2 text-center col-aks">
-                            <button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} 
-                                class="w-8 h-8 flex items-center justify-center mx-auto text-red-500 hover:bg-red-50 rounded-full transition-all font-bold text-lg">×</button>
-                            <input type="hidden" class="row-d" value="${dateKey}">
-                        </td>
+                    <tr class="${isSun ? 'bg-red-50/50' : 'hover:bg-slate-50'}">
+                        <td class="p-4 font-bold col-tgl ${isSun ? 'text-red-500' : ''}">${d} <span class="text-[10px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
+                        <td class="p-2 col-jam"><input type="text" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.masuk || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-m w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}"></td>
+                        <td class="p-2 col-jam"><input type="text" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.pulang || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-p w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}"></td>
+                        <td class="p-2 col-ket"><select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs"><option value="Hadir">Hadir</option>${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}</select></td>
+                        <td class="p-2 col-aks"><button onclick="clearRow(this)" ${isSun ? 'disabled' : ''} class="text-red-500 font-bold">×</button><input type="hidden" class="row-d" value="${dateKey}"></td>
                     </tr>`;
             }
             updateSummaryUI(stats);
         }
 
+        // PDF TABULASI FINGERPRINT FORMAT
+        window.downloadTabulasiDept = async () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const unitTarget = JSON.parse(localStorage.getItem('sekolah'))[0];
+            const m = currentDate.getMonth(), y = currentDate.getFullYear(), days = new Date(y, m + 1, 0).getDate();
+            
+            toggleLoading(true);
+            try {
+                const snapUser = await getDocs(query(collection(db, "users"), where("role", "==", "Guru")));
+                let gurus = []; snapUser.forEach(d => { if(d.data().sekolah?.[0] === unitTarget) gurus.push({id: d.id, ...d.data()}); });
+                gurus.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+                
+                const snapPres = await getDocs(collection(db, "presensi"));
+                let logs = []; snapPres.forEach(d => logs.push(d.data()));
+
+                doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
+                doc.setFontSize(8).setFont("helvetica", "normal");
+                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${days}`, 15, 20);
+                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${days}`, 148, 20, { align: "center" });
+
+                const head = ['']; for(let i=1; i<=31; i++) head.push(i.toString());
+                const body = [];
+                gurus.forEach(g => {
+                    let info = new Array(32).fill("");
+                    info[0] = "ID:"; info[2] = g.id; info[8] = "Nama:"; info[10] = g.nama; info[18] = "Dept.:"; info[20] = unitTarget;
+                    body.push(info);
+
+                    let times = [''];
+                    for(let i=1; i<=31; i++) {
+                        if(i > days) { times.push(""); continue; }
+                        let k = `${y}-${(m+1).toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
+                        let l = logs.find(x => x.username === g.id && x.tanggal === k);
+                        times.push(l ? (l.keterangan !== 'Hadir' ? l.keterangan : `${l.masuk||''}\n${l.pulang||''}`) : "");
+                    }
+                    body.push(times);
+                });
+
+                doc.autoTable({
+                    startY: 25, head: [head], body: body, theme: 'grid',
+                    styles: { fontSize: 5, cellPadding: 0.3, halign: 'center', valign: 'middle', lineWidth: 0.1, textColor: 0 },
+                    headStyles: { fillColor: 255, textColor: 0, fontStyle: 'bold' },
+                    columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 }
+                });
+                doc.save(`Tabulasi_${unitTarget}.pdf`);
+            } catch(e) { alert("Error PDF"); }
+            toggleLoading(false);
+        };
+
+        // SHARED HELPERS
         function updateSummaryUI(s) {
-            const alpa = s.work - s.hadir - s.libur;
+            const a = Math.max(0, s.work - s.hadir - s.libur);
             document.getElementById('statWorkDays').innerText = s.work;
             document.getElementById('statHadir').innerText = s.hadir;
-            document.getElementById('statAlpa').innerText = alpa > 0 ? alpa : 0;
+            document.getElementById('statAlpa').innerText = a;
             document.getElementById('statLibur').innerText = s.libur;
             document.getElementById('statPercent').innerText = s.work > 0 ? Math.round((s.hadir / (s.work - s.libur)) * 100) + "%" : "0%";
         }
 
-        window.downloadPDFGuru = () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const user = localStorage.getItem('nama_guru');
-            const sekolah = JSON.parse(localStorage.getItem('sekolah'))[0];
-            const bulan = document.getElementById('displayMonthYear').innerText;
-            doc.setFontSize(16); doc.text("LAPORAN DETAIL ABSENSI GURU", 105, 15, { align: "center" });
-            doc.setFontSize(10); doc.text(`Sekolah: ${sekolah}`, 15, 25);
-            doc.text(`Nama: ${user}`, 15, 30); doc.text(`Periode: ${bulan}`, 15, 35);
-            const rows = [];
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                const cells = tr.querySelectorAll('td');
-                const masuk = tr.querySelector('.row-m').value;
-                const pulang = tr.querySelector('.row-p').value;
-                const ket = tr.querySelector('.row-k').value;
-                if(masuk || pulang || ket !== "Hadir") { rows.push([cells[0].innerText.split(' ')[0], masuk || '-', pulang || '-', ket]); }
-            });
-            doc.autoTable({ startY: 40, head: [['Tgl', 'Masuk', 'Pulang', 'Keterangan']], body: rows, theme: 'grid', headStyles: { fillColor: [30, 41, 59] } });
-            doc.save(`Absensi_${user}_${bulan}.pdf`);
-        };
-
-        window.downloadTabulasiDept = async () => {
-            const { jsPDF } = window.jspdf;
-            // Menggunakan orientasi Landscape agar muat 31 kolom
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const unitTarget = JSON.parse(localStorage.getItem('sekolah'))[0];
-            if (!unitTarget) return alert("Unit tidak ditemukan!");
-            
-            const m = currentDate.getMonth(), y = currentDate.getFullYear();
-            const daysInMonth = new Date(y, m + 1, 0).getDate();
-            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            
-            toggleLoading(true);
-            try {
-                const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
-                const snapUser = await getDocs(qUser);
-                let deptGurus = [];
-                snapUser.forEach(d => { 
-                    if (d.data().sekolah && d.data().sekolah[0] === unitTarget) deptGurus.push({ id: d.id, ...d.data() }); 
-                });
-                deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
-        
-                const snapPresensi = await getDocs(collection(db, "presensi"));
-                let allLogs = []; 
-                snapPresensi.forEach(d => allLogs.push(d.data()));
-        
-                // Header Judul Laporan
-                doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
-                doc.setFontSize(9).setFont("helvetica", "normal");
-                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
-                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
-        
-                // Header Kolom Tanggal (1-31)
-                const tableHeader = ['']; 
-                for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
-        
-                const tableRows = [];
-                deptGurus.forEach((guru) => {
-                    // Baris Informasi Guru (Format sesuai Fingerprint)
-                    // Kolom 1: ID, Kolom 3: Value ID, Kolom 9: Nama, Kolom 11: Value Nama, Kolom 19: Dept, Kolom 21: Value Dept
-                    const infoRow = new Array(32).fill("");
-                    infoRow[0] = { content: "ID:", styles: { fontStyle: 'normal' } };
-                    infoRow[2] = { content: guru.id, styles: { fontStyle: 'bold' } };
-                    infoRow[8] = { content: "Nama:", styles: { fontStyle: 'normal' } };
-                    infoRow[10] = { content: guru.nama, styles: { fontStyle: 'bold', halign: 'left' } };
-                    infoRow[18] = { content: "Dept.:", styles: { fontStyle: 'normal' } };
-                    infoRow[20] = { content: unitTarget, styles: { fontStyle: 'bold', halign: 'left' } };
-        
-                    tableRows.push(infoRow);
-        
-                    // Baris Jam (Masuk di atas, Pulang di bawah dalam satu sel)
-                    const dataRow = [''];
-                    for (let d = 1; d <= 31; d++) {
-                        if (d > daysInMonth) { dataRow.push(""); continue; }
-                        const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-                        const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
-                        
-                        if (log) {
-                            if (log.keterangan && log.keterangan !== 'Hadir') {
-                                dataRow.push({ content: log.keterangan, styles: { fontSize: 4 } });
-                            } else {
-                                // Format: Jam Masuk diatas, Jam Pulang dibawah
-                                const masuk = log.masuk || "";
-                                const pulang = log.pulang || "";
-                                dataRow.push(`${masuk}\n${pulang}`);
-                            }
-                        } else {
-                            dataRow.push("");
-                        }
-                    }
-                    tableRows.push(dataRow);
-                });
-        
-                doc.autoTable({
-                    startY: 25,
-                    head: [tableHeader],
-                    body: tableRows,
-                    theme: 'grid',
-                    styles: { 
-                        fontSize: 5, 
-                        cellPadding: 0.3, 
-                        halign: 'center', 
-                        valign: 'middle', 
-                        lineWidth: 0.1,
-                        textColor: [0, 0, 0],
-                        lineColor: [0, 0, 0]
-                    },
-                    headStyles: { 
-                        fillColor: [255, 255, 255], 
-                        textColor: [0, 0, 0], 
-                        fontStyle: 'bold' 
-                    },
-                    columnStyles: { 
-                        0: { cellWidth: 6 } // Lebar kolom pertama (ID/Nama label)
-                    },
-                    margin: { left: 10, right: 10 },
-                    didParseCell: function(data) {
-                        // Menghapus border untuk baris informasi guru agar terlihat bersih seperti fingerprint
-                        if (data.row.index % 2 === 0) {
-                           // Baris Genap (Informasi ID/Nama/Dept)
-                        }
-                    }
-                });
-        
-                doc.save(`Tabulasi_${unitTarget}_${y}_${m+1}.pdf`);
-            } catch (err) {
-                console.error(err);
-                alert("Gagal mengunduh tabulasi!");
-            }
-            toggleLoading(false);
-        };
-
         window.saveAll = async () => {
             toggleLoading(true);
             const rows = document.querySelectorAll('#tableBody tr');
-            const userCeklok = localStorage.getItem('user_ceklok'), namaGuru = localStorage.getItem('nama_guru'), sekolahData = localStorage.getItem('sekolah'), sekolahName = sekolahData ? JSON.parse(sekolahData)[0] : "";
+            const u = localStorage.getItem('user_ceklok'), n = localStorage.getItem('nama_guru'), s = JSON.parse(localStorage.getItem('sekolah'))[0];
             for (let tr of rows) {
-                const elDate = tr.querySelector('.row-d'), elMasuk = tr.querySelector('.row-m'), elPulang = tr.querySelector('.row-p'), elKet = tr.querySelector('.row-k');
-                if (elDate && elMasuk && elPulang && elKet) {
-                    const date = elDate.value, m = elMasuk.value, p = elPulang.value, k = elKet.value;
-                    if (m || p || k !== "Hadir") {
-                        try { await setDoc(doc(db, "presensi", `${userCeklok}_${date}`), { username: userCeklok, nama: namaGuru, sekolah: sekolahName, tanggal: date, masuk: m, pulang: p, keterangan: k }); } 
-                        catch (err) { console.error("Gagal simpan: " + date, err); }
-                    }
+                const d = tr.querySelector('.row-d').value, m = tr.querySelector('.row-m').value, p = tr.querySelector('.row-p').value, k = tr.querySelector('.row-k').value;
+                if (m || p || k !== "Hadir") {
+                    await setDoc(doc(db, "presensi", `${u}_${d}`), { username: u, nama: n, sekolah: s, tanggal: d, masuk: m, pulang: p, keterangan: k });
                 }
             }
-            toggleLoading(false); alert("Data Berhasil Disimpan!");
+            toggleLoading(false); alert("Tersimpan!");
         };
 
         window.handleStatus = (el) => {
-            const tr = el.closest('tr');
-            const m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p');
-            const isNotHadir = el.value !== "Hadir";
-            if (isNotHadir) { m.value = ""; p.value = ""; }
-            m.disabled = p.disabled = isNotHadir;
-            [m, p].forEach(inp => {
-                if (isNotHadir) { inp.classList.add('bg-slate-100', 'text-slate-400'); inp.classList.remove('bg-white', 'text-slate-700'); }
-                else { inp.classList.remove('bg-slate-100', 'text-slate-400'); inp.classList.add('bg-white', 'text-slate-700'); }
-            });
+            const tr = el.closest('tr'), m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p'), off = el.value !== "Hadir";
+            if (off) { m.value = ""; p.value = ""; }
+            m.disabled = p.disabled = off;
+            [m,p].forEach(i => i.classList.toggle('bg-slate-100', off));
         };
 
         window.clearRow = (btn) => {
             const tr = btn.closest('tr');
-            tr.querySelectorAll('input:not(.row-d), select').forEach(i => { 
-                i.value = (i.tagName === 'SELECT' ? 'Hadir' : ''); 
-                i.disabled = false; 
-                i.classList.remove('bg-slate-100', 'text-slate-400'); 
-                i.classList.add('bg-white', 'text-slate-700');
-            });
+            tr.querySelectorAll('input:not(.row-d), select').forEach(i => { i.value = (i.tagName === 'SELECT' ? 'Hadir' : ''); i.disabled = false; i.classList.remove('bg-slate-100'); });
         };
 
         function toggleLoading(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); }
@@ -479,7 +309,17 @@
         document.getElementById('btnTabulasiDept').onclick = window.downloadTabulasiDept;
         document.getElementById('prevBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderTable(); };
         document.getElementById('nextBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderTable(); };
-        initApp();
+        
+        function init() {
+            if(!localStorage.getItem('user_ceklok')) return;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('timesheetSection').classList.remove('hidden');
+            onSnapshot(query(collection(db, "presensi"), where("username", "==", localStorage.getItem('user_ceklok'))), (s) => {
+                masterLogs = []; s.forEach(d => masterLogs.push(d.data()));
+                renderTable();
+            });
+        }
+        init();
     </script>
 </body>
 </html>
