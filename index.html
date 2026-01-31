@@ -138,7 +138,15 @@
 
         let currentDate = new Date();
         let masterLogs = [];
-        let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
+        let ketOptions = []; // Biarkan kosong awalnya
+        
+        // Tambahkan listener untuk mengambil opsi keterangan dari Firebase
+        onSnapshot(doc(db, "metadata", "keterangan_list"), (docSnap) => {
+            if (docSnap.exists()) {
+                ketOptions = docSnap.data().opsi || [];
+                renderTable(); // Render ulang tabel saat ada perubahan opsi
+            }
+        });
 
         // UI & SECURITY LOGIC
         const passwordInput = document.getElementById('password');
@@ -261,10 +269,13 @@
                                 ${isSun || isOff ? 'disabled' : ''} 
                                 class="row-p w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
+                        // Di dalam fungsi renderTable(), cari bagian loop select:
                         <td class="p-2 col-ket">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs">
-                                <option value="Hadir">Hadir</option>
-                                ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}
+                                <option value="Hadir" ${log.keterangan === 'Hadir' || !log.keterangan ? 'selected' : ''}>Hadir</option>
+                                ${ketOptions.map(o => `
+                                    <option value="${o}" ${log.keterangan === o ? 'selected' : ''}>${o}</option>
+                                `).join('')}
                             </select>
                         </td>
                         <td class="p-2 col-aks">
