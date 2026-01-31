@@ -326,42 +326,112 @@
 
         window.downloadTabulasiDept = async () => {
             const { jsPDF } = window.jspdf;
+            // Menggunakan orientasi Landscape agar muat 31 kolom
             const doc = new jsPDF('l', 'mm', 'a4');
             const unitTarget = JSON.parse(localStorage.getItem('sekolah'))[0];
             if (!unitTarget) return alert("Unit tidak ditemukan!");
+            
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
             const daysInMonth = new Date(y, m + 1, 0).getDate();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            
             toggleLoading(true);
             try {
                 const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
                 const snapUser = await getDocs(qUser);
                 let deptGurus = [];
-                snapUser.forEach(d => { if (d.data().sekolah && d.data().sekolah[0] === unitTarget) deptGurus.push({ id: d.id, ...d.data() }); });
+                snapUser.forEach(d => { 
+                    if (d.data().sekolah && d.data().sekolah[0] === unitTarget) deptGurus.push({ id: d.id, ...d.data() }); 
+                });
                 deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+        
                 const snapPresensi = await getDocs(collection(db, "presensi"));
-                let allLogs = []; snapPresensi.forEach(d => allLogs.push(d.data()));
-                doc.setFontSize(14).setFont("helvetica", "bold").text(`Tabulasi Absensi Dept: ${unitTarget}`, 148, 12, { align: "center" });
-                doc.setFontSize(9).setFont("helvetica", "normal").text(`Periode: ${monthNames[m]} ${y}`, 15, 20);
-                const tableHeader = ['']; for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
+                let allLogs = []; 
+                snapPresensi.forEach(d => allLogs.push(d.data()));
+        
+                // Header Judul Laporan
+                doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
+                doc.setFontSize(9).setFont("helvetica", "normal");
+                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
+                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+        
+                // Header Kolom Tanggal (1-31)
+                const tableHeader = ['']; 
+                for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
+        
                 const tableRows = [];
                 deptGurus.forEach((guru) => {
-                    tableRows.push([{ content: `ID: ${guru.id} | Nama: ${guru.nama} | Unit: ${unitTarget}`, colSpan: 32, styles: { halign: 'left', fillColor: [245, 245, 245], fontStyle: 'bold' } }]);
+                    // Baris Informasi Guru (Format sesuai Fingerprint)
+                    // Kolom 1: ID, Kolom 3: Value ID, Kolom 9: Nama, Kolom 11: Value Nama, Kolom 19: Dept, Kolom 21: Value Dept
+                    const infoRow = new Array(32).fill("");
+                    infoRow[0] = { content: "ID:", styles: { fontStyle: 'normal' } };
+                    infoRow[2] = { content: guru.id, styles: { fontStyle: 'bold' } };
+                    infoRow[8] = { content: "Nama:", styles: { fontStyle: 'normal' } };
+                    infoRow[10] = { content: guru.nama, styles: { fontStyle: 'bold', halign: 'left' } };
+                    infoRow[18] = { content: "Dept.:", styles: { fontStyle: 'normal' } };
+                    infoRow[20] = { content: unitTarget, styles: { fontStyle: 'bold', halign: 'left' } };
+        
+                    tableRows.push(infoRow);
+        
+                    // Baris Jam (Masuk di atas, Pulang di bawah dalam satu sel)
                     const dataRow = [''];
                     for (let d = 1; d <= 31; d++) {
                         if (d > daysInMonth) { dataRow.push(""); continue; }
                         const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
                         const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                        
                         if (log) {
-                            if (log.keterangan && log.keterangan !== 'Hadir') dataRow.push({ content: log.keterangan, styles: { fontSize: 4.5 } });
-                            else dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`);
-                        } else dataRow.push("");
+                            if (log.keterangan && log.keterangan !== 'Hadir') {
+                                dataRow.push({ content: log.keterangan, styles: { fontSize: 4 } });
+                            } else {
+                                // Format: Jam Masuk diatas, Jam Pulang dibawah
+                                const masuk = log.masuk || "";
+                                const pulang = log.pulang || "";
+                                dataRow.push(`${masuk}\n${pulang}`);
+                            }
+                        } else {
+                            dataRow.push("");
+                        }
                     }
                     tableRows.push(dataRow);
                 });
-                doc.autoTable({ startY: 25, head: [tableHeader], body: tableRows, theme: 'grid', styles: { fontSize: 5, cellPadding: 0.5, halign: 'center', valign: 'middle', lineWidth: 0.1 }, headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] }, columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 } });
-                doc.save(`Tabulasi_${unitTarget}_${monthNames[m]}_${y}.pdf`);
-            } catch (err) { alert("Gagal mengunduh tabulasi!"); }
+        
+                doc.autoTable({
+                    startY: 25,
+                    head: [tableHeader],
+                    body: tableRows,
+                    theme: 'grid',
+                    styles: { 
+                        fontSize: 5, 
+                        cellPadding: 0.3, 
+                        halign: 'center', 
+                        valign: 'middle', 
+                        lineWidth: 0.1,
+                        textColor: [0, 0, 0],
+                        lineColor: [0, 0, 0]
+                    },
+                    headStyles: { 
+                        fillColor: [255, 255, 255], 
+                        textColor: [0, 0, 0], 
+                        fontStyle: 'bold' 
+                    },
+                    columnStyles: { 
+                        0: { cellWidth: 6 } // Lebar kolom pertama (ID/Nama label)
+                    },
+                    margin: { left: 10, right: 10 },
+                    didParseCell: function(data) {
+                        // Menghapus border untuk baris informasi guru agar terlihat bersih seperti fingerprint
+                        if (data.row.index % 2 === 0) {
+                           // Baris Genap (Informasi ID/Nama/Dept)
+                        }
+                    }
+                });
+        
+                doc.save(`Tabulasi_${unitTarget}_${y}_${m+1}.pdf`);
+            } catch (err) {
+                console.error(err);
+                alert("Gagal mengunduh tabulasi!");
+            }
             toggleLoading(false);
         };
 
