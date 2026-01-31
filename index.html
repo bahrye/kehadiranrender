@@ -223,49 +223,120 @@
         // PDF TABULASI FINGERPRINT FORMAT
         window.downloadTabulasiDept = async () => {
             const { jsPDF } = window.jspdf;
+            // Menggunakan orientasi Landscape A4
             const doc = new jsPDF('l', 'mm', 'a4');
             const unitTarget = JSON.parse(localStorage.getItem('sekolah'))[0];
-            const m = currentDate.getMonth(), y = currentDate.getFullYear(), days = new Date(y, m + 1, 0).getDate();
+            if (!unitTarget) return alert("Unit tidak ditemukan!");
+            
+            const m = currentDate.getMonth(), y = currentDate.getFullYear();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
             toggleLoading(true);
             try {
-                const snapUser = await getDocs(query(collection(db, "users"), where("role", "==", "Guru")));
-                let gurus = []; snapUser.forEach(d => { if(d.data().sekolah?.[0] === unitTarget) gurus.push({id: d.id, ...d.data()}); });
-                gurus.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
-                
-                const snapPres = await getDocs(collection(db, "presensi"));
-                let logs = []; snapPres.forEach(d => logs.push(d.data()));
-
+                const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
+                const snapUser = await getDocs(qUser);
+                let deptGurus = [];
+                snapUser.forEach(d => { 
+                    if (d.data().sekolah && d.data().sekolah[0] === unitTarget) deptGurus.push({ id: d.id, ...d.data() }); 
+                });
+                deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+        
+                const snapPresensi = await getDocs(collection(db, "presensi"));
+                let allLogs = []; 
+                snapPresensi.forEach(d => allLogs.push(d.data()));
+        
+                // Header Atas
                 doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
                 doc.setFontSize(8).setFont("helvetica", "normal");
-                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${days}`, 15, 20);
-                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${days}`, 148, 20, { align: "center" });
-
-                const head = ['']; for(let i=1; i<=31; i++) head.push(i.toString());
-                const body = [];
-                gurus.forEach(g => {
-                    let info = new Array(32).fill("");
-                    info[0] = "ID:"; info[2] = g.id; info[8] = "Nama:"; info[10] = g.nama; info[18] = "Dept.:"; info[20] = unitTarget;
-                    body.push(info);
-
-                    let times = [''];
-                    for(let i=1; i<=31; i++) {
-                        if(i > days) { times.push(""); continue; }
-                        let k = `${y}-${(m+1).toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
-                        let l = logs.find(x => x.username === g.id && x.tanggal === k);
-                        times.push(l ? (l.keterangan !== 'Hadir' ? l.keterangan : `${l.masuk||''}\n${l.pulang||''}`) : "");
+                doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 12, 20);
+                doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+        
+                // Definisi Header Kolom 1-30 (sesuai gambar)
+                const tableHeader = [];
+                for (let i = 1; i <= 30; i++) tableHeader.push(i.toString());
+        
+                const tableRows = [];
+                deptGurus.forEach((guru) => {
+                    // BARIS 1: Baris Info Guru (ID, Nama, Dept)
+                    const infoRow = new Array(30).fill("");
+                    infoRow[0] = "ID:";
+                    infoRow[2] = guru.id;
+                    infoRow[8] = "Nama:";
+                    infoRow[10] = guru.nama;
+                    infoRow[18] = "Dept.:";
+                    infoRow[20] = unitTarget;
+                    tableRows.push(infoRow);
+        
+                    // BARIS 2: Data Jam (Masuk di baris atas, Pulang di baris bawah sel yang sama)
+                    const dataRow = [];
+                    for (let d = 1; d <= 30; d++) {
+                        if (d > daysInMonth) { dataRow.push(""); continue; }
+                        const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                        const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                        
+                        if (log) {
+                            if (log.keterangan && log.keterangan !== 'Hadir') {
+                                dataRow.push({ content: log.keterangan, styles: { fontSize: 4 } });
+                            } else {
+                                const masuk = log.masuk || "";
+                                const pulang = log.pulang || "";
+                                // Menggunakan \n untuk baris bertumpuk
+                                dataRow.push(`${masuk}\n${pulang}`);
+                            }
+                        } else {
+                            dataRow.push("");
+                        }
                     }
-                    body.push(times);
+                    tableRows.push(dataRow);
                 });
-
+        
                 doc.autoTable({
-                    startY: 25, head: [head], body: body, theme: 'grid',
-                    styles: { fontSize: 5, cellPadding: 0.3, halign: 'center', valign: 'middle', lineWidth: 0.1, textColor: 0 },
-                    headStyles: { fillColor: 255, textColor: 0, fontStyle: 'bold' },
-                    columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 }
+                    startY: 23,
+                    head: [tableHeader],
+                    body: tableRows,
+                    theme: 'grid',
+                    styles: { 
+                        fontSize: 5, 
+                        cellPadding: 0.4, 
+                        halign: 'center', 
+                        valign: 'middle', 
+                        lineWidth: 0.1,
+                        textColor: [0, 0, 0],
+                        lineColor: [0, 0, 0],
+                        font: "helvetica"
+                    },
+                    headStyles: { 
+                        fillColor: [255, 255, 255], 
+                        textColor: [0, 0, 0], 
+                        fontStyle: 'bold',
+                        lineWidth: 0.1 
+                    },
+                    // Custom styling untuk baris info agar garis vertikal antar info tidak terlihat (mirip merge)
+                    didParseCell: function(data) {
+                        // Baris Info Guru (Baris 0, 2, 4, dst)
+                        if (data.row.index % 2 === 0) {
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.halign = 'left';
+                            // Sembunyikan garis pinggir sel kecuali bagian luar untuk mensimulasikan format fingerprint
+                            if (data.column.index !== 0 && data.column.index !== 2 && data.column.index !== 8 && data.column.index !== 10 && data.column.index !== 18 && data.column.index !== 20) {
+                                data.cell.styles.textColor = [255, 255, 255]; // Sembunyikan sel kosong
+                            }
+                        }
+                    },
+                    columnStyles: {
+                        // Mengatur lebar kolom agar konsisten dan kecil (30 kolom dalam landscape A4)
+                        0: { cellWidth: 8 }
+                    },
+                    margin: { left: 10, right: 10 },
+                    tableLineWidth: 0.1,
                 });
-                doc.save(`Tabulasi_${unitTarget}.pdf`);
-            } catch(e) { alert("Error PDF"); }
+        
+                doc.save(`Tabulasi_${unitTarget}_${y}_${m+1}.pdf`);
+            } catch (err) {
+                console.error(err);
+                alert("Gagal mengunduh tabulasi!");
+            }
             toggleLoading(false);
         };
 
