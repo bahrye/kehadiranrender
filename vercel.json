@@ -1,7 +1,0 @@
-{
-  "build": {
-    "env": {
-      "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key"
-    }
-  }
-}
