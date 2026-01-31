@@ -101,14 +101,16 @@
             </div>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-3">
             <button onclick="downloadPDFGuru()" class="bg-rose-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-rose-700 transition flex items-center gap-2">
-                <span>📄</span> Download Rekap Ceklok (PDF)
+                <span>📄</span> Rekap Pribadi (PDF)
+            </button>
+            <button id="btnTabulasiDept" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                <span>📋</span> Tabulasi Dept (PDF)
             </button>
         </div>
 
         <div class="bg-white rounded-3xl shadow-xl border overflow-hidden flex flex-col" style="max-height: 70vh;">
-            
             <div class="overflow-y-auto overflow-x-auto flex-grow custom-scroll">
                 <table class="w-full text-left text-sm border-collapse">
                     <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-20 shadow-sm">
@@ -120,12 +122,11 @@
                             <th class="p-4 bg-slate-50 col-aks border-b">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y">
-                        </tbody>
+                    <tbody id="tableBody" class="divide-y"></tbody>
                 </table>
             </div>
-        
-            <div class="p-4 bg-white border-t z-30">
+
+            <div class="p-4 bg-slate-50 border-t z-30">
                 <button id="btnSave" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
                     <span>💾</span> SIMPAN SEMUA PERUBAHAN
                 </button>
@@ -139,7 +140,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
@@ -323,6 +324,47 @@
             doc.save(`Absensi_${user}_${bulan}.pdf`);
         };
 
+        window.downloadTabulasiDept = async () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const unitTarget = JSON.parse(localStorage.getItem('sekolah'))[0];
+            if (!unitTarget) return alert("Unit tidak ditemukan!");
+            const m = currentDate.getMonth(), y = currentDate.getFullYear();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            toggleLoading(true);
+            try {
+                const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
+                const snapUser = await getDocs(qUser);
+                let deptGurus = [];
+                snapUser.forEach(d => { if (d.data().sekolah && d.data().sekolah[0] === unitTarget) deptGurus.push({ id: d.id, ...d.data() }); });
+                deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+                const snapPresensi = await getDocs(collection(db, "presensi"));
+                let allLogs = []; snapPresensi.forEach(d => allLogs.push(d.data()));
+                doc.setFontSize(14).setFont("helvetica", "bold").text(`Tabulasi Absensi Dept: ${unitTarget}`, 148, 12, { align: "center" });
+                doc.setFontSize(9).setFont("helvetica", "normal").text(`Periode: ${monthNames[m]} ${y}`, 15, 20);
+                const tableHeader = ['']; for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
+                const tableRows = [];
+                deptGurus.forEach((guru) => {
+                    tableRows.push([{ content: `ID: ${guru.id} | Nama: ${guru.nama} | Unit: ${unitTarget}`, colSpan: 32, styles: { halign: 'left', fillColor: [245, 245, 245], fontStyle: 'bold' } }]);
+                    const dataRow = [''];
+                    for (let d = 1; d <= 31; d++) {
+                        if (d > daysInMonth) { dataRow.push(""); continue; }
+                        const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                        const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
+                        if (log) {
+                            if (log.keterangan && log.keterangan !== 'Hadir') dataRow.push({ content: log.keterangan, styles: { fontSize: 4.5 } });
+                            else dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`);
+                        } else dataRow.push("");
+                    }
+                    tableRows.push(dataRow);
+                });
+                doc.autoTable({ startY: 25, head: [tableHeader], body: tableRows, theme: 'grid', styles: { fontSize: 5, cellPadding: 0.5, halign: 'center', valign: 'middle', lineWidth: 0.1 }, headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] }, columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 } });
+                doc.save(`Tabulasi_${unitTarget}_${monthNames[m]}_${y}.pdf`);
+            } catch (err) { alert("Gagal mengunduh tabulasi!"); }
+            toggleLoading(false);
+        };
+
         window.saveAll = async () => {
             toggleLoading(true);
             const rows = document.querySelectorAll('#tableBody tr');
@@ -342,22 +384,14 @@
 
         window.handleStatus = (el) => {
             const tr = el.closest('tr');
-            const m = tr.querySelector('.row-m');
-            const p = tr.querySelector('.row-p');
+            const m = tr.querySelector('.row-m'), p = tr.querySelector('.row-p');
             const isNotHadir = el.value !== "Hadir";
             if (isNotHadir) { m.value = ""; p.value = ""; }
             m.disabled = p.disabled = isNotHadir;
-            if (isNotHadir) {
-                m.classList.add('bg-slate-100', 'text-slate-400');
-                m.classList.remove('bg-white', 'text-slate-700');
-                p.classList.add('bg-slate-100', 'text-slate-400');
-                p.classList.remove('bg-white', 'text-slate-700');
-            } else {
-                m.classList.remove('bg-slate-100', 'text-slate-400');
-                m.classList.add('bg-white', 'text-slate-700');
-                p.classList.remove('bg-slate-100', 'text-slate-400');
-                p.classList.add('bg-white', 'text-slate-700');
-            }
+            [m, p].forEach(inp => {
+                if (isNotHadir) { inp.classList.add('bg-slate-100', 'text-slate-400'); inp.classList.remove('bg-white', 'text-slate-700'); }
+                else { inp.classList.remove('bg-slate-100', 'text-slate-400'); inp.classList.add('bg-white', 'text-slate-700'); }
+            });
         };
 
         window.clearRow = (btn) => {
@@ -372,6 +406,7 @@
 
         function toggleLoading(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); }
         document.getElementById('btnSave').onclick = window.saveAll;
+        document.getElementById('btnTabulasiDept').onclick = window.downloadTabulasiDept;
         document.getElementById('prevBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderTable(); };
         document.getElementById('nextBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderTable(); };
         initApp();
