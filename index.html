@@ -112,7 +112,12 @@
                     <tbody id="tableBody" class="divide-y"></tbody>
                 </table>
             </div>
-            <button id="btnSave" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition">💾 Simpan Semua Perubahan</button>
+            <div class="fixed bottom-6 right-6 z-[100] md:right-10">
+                <button id="btnSave" class="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200">
+                    <span class="text-xl">💾</span>
+                    <span class="hidden md:inline">SIMPAN SEMUA PERUBAHAN</span>
+                </button>
+            </div>
             <div class="mt-4 flex justify-between px-2 text-[10px]">
                 <div></div>
                 <button onclick="localStorage.clear(); location.reload();" class="text-red-400 underline italic">Logout</button>
