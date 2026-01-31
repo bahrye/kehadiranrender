@@ -275,25 +275,97 @@
 
         window.downloadPDFAllGuru = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const now = new Date(), m = now.getMonth(), y = now.getFullYear(), daysInMonth = new Date(y, m + 1, 0).getDate();
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+            const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
             const mNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             const periode = `${mNames[m]} ${y}`;
-            doc.setFontSize(14); doc.text("Lap. Detail Absensi", 148, 12, { align: "center" });
-            doc.setFontSize(9); doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 20, 20);
-            const tableHeader = ['']; for (let i = 1; i <= daysInMonth; i++) tableHeader.push(i.toString());
+        
+            // Header Laporan sesuai Gambar
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Lap. Detail Absensi", 148, 12, { align: "center" });
+            
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
+            doc.text(`Tabulasi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
+        
+            // Header Tabel (Angka Tanggal 1-31)
+            const tableHeader = ['']; 
+            for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
+        
             const tableRows = [];
-            allUsers.filter(u => u.role === 'Guru').forEach((userObj) => {
-                tableRows.push([{ content: `ID: ${userObj.id}      Nama: ${userObj.nama}`, colSpan: daysInMonth + 1, styles: { halign: 'left', fillColor: [255, 255, 255], fontStyle: 'bold' } }]);
-                const dataRow = ['']; for (let d = 1; d <= daysInMonth; d++) {
+            
+            // Sortir users berdasarkan ID atau Nama (Koleksi susunan ID)
+            const sortedUsers = [...allUsers].filter(u => u.role === 'Guru').sort((a, b) => a.id.localeCompare(b.id));
+        
+            sortedUsers.forEach((userObj, index) => {
+                // Baris 1: ID, Nama, dan Dept (Sekolah)
+                // Dibuat colspan agar memenuhi lebar tabel
+                tableRows.push([
+                    { 
+                        content: `ID: ${userObj.id}                Nama: ${userObj.nama}                Dept.: ${userObj.sekolah ? userObj.sekolah[0] : 'MTS~TANUNTUNG'}`, 
+                        colSpan: 32, 
+                        styles: { halign: 'left', fillColor: [255, 255, 255], fontStyle: 'bold', lineWidth: 0.1 } 
+                    }
+                ]);
+        
+                // Baris 2: Data Jam Masuk dan Pulang
+                const dataRow = [''];
+                for (let d = 1; d <= 31; d++) {
+                    if (d > daysInMonth) {
+                        dataRow.push("");
+                        continue;
+                    }
                     const dateKey = `${y}-${(m+1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
                     const log = allLogs.find(l => l.username === userObj.id && l.tanggal === dateKey);
-                    if (log) { if (log.keterangan && log.keterangan !== 'Hadir') dataRow.push(log.keterangan); else dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`); }
-                    else dataRow.push("");
+                    
+                    if (log) {
+                        if (log.keterangan && log.keterangan !== 'Hadir') {
+                            dataRow.push(log.keterangan);
+                        } else {
+                            // Format Jam Masuk di atas, Jam Pulang di bawah dalam satu cell
+                            dataRow.push(`${log.masuk || ''}\n${log.pulang || ''}`);
+                        }
+                    } else {
+                        dataRow.push("");
+                    }
                 }
                 tableRows.push(dataRow);
             });
-            doc.autoTable({ startY: 25, head: [tableHeader], body: tableRows, theme: 'grid', styles: { fontSize: 6, cellPadding: 0.5, halign: 'center', valign: 'middle', lineWidth: 0.1, minCellHeight: 8 }, headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 5 } }, margin: { left: 10, right: 10 } });
+        
+            doc.autoTable({
+                startY: 25,
+                head: [tableHeader],
+                body: tableRows,
+                theme: 'grid',
+                styles: { 
+                    fontSize: 5.5, 
+                    cellPadding: 0.5, 
+                    halign: 'center', 
+                    valign: 'middle', 
+                    lineWidth: 0.1, 
+                    textColor: [0, 0, 0],
+                    minCellHeight: 4
+                },
+                headStyles: { 
+                    fillColor: [255, 255, 255], 
+                    textColor: [0, 0, 0], 
+                    fontStyle: 'bold',
+                    lineWidth: 0.1
+                },
+                columnStyles: { 
+                    0: { cellWidth: 5 } // Kolom kosong di paling kiri
+                },
+                margin: { left: 10, right: 10 },
+                tableLineWidth: 0.1,
+                didParseCell: function(data) {
+                    // Memberikan border yang lebih konsisten seperti gambar
+                    data.cell.styles.lineColor = [0, 0, 0];
+                }
+            });
+        
             doc.save(`Tabulasi_Absensi_${periode}.pdf`);
         };
     </script>
