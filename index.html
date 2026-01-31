@@ -108,27 +108,24 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-xl border overflow-hidden flex flex-col" style="max-height: 70vh;">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-10 shadow-sm border-b">
+            
+            <div class="overflow-y-auto overflow-x-auto flex-grow custom-scroll">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th class="p-4 col-tgl">Tanggal</th>
-                            <th class="p-4 col-jam">Jam Masuk</th>
-                            <th class="p-4 col-jam">Jam Pulang</th>
-                            <th class="p-4 col-ket">Keterangan</th>
-                            <th class="p-4 col-aks">Aksi</th>
+                            <th class="p-4 bg-slate-50 col-tgl border-b">Tanggal</th>
+                            <th class="p-4 bg-slate-50 col-jam border-b">Jam Masuk</th>
+                            <th class="p-4 bg-slate-50 col-jam border-b">Jam Pulang</th>
+                            <th class="p-4 bg-slate-50 col-ket border-b">Keterangan</th>
+                            <th class="p-4 bg-slate-50 col-aks border-b">Aksi</th>
                         </tr>
                     </thead>
+                    <tbody id="tableBody" class="divide-y">
+                        </tbody>
                 </table>
             </div>
-
-            <div class="overflow-y-auto overflow-x-auto flex-grow custom-scroll">
-                <table class="w-full text-left text-sm">
-                    <tbody id="tableBody" class="divide-y"></tbody>
-                </table>
-            </div>
-
-            <div class="p-4 bg-slate-50 border-t">
+        
+            <div class="p-4 bg-white border-t z-30">
                 <button id="btnSave" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
                     <span>💾</span> SIMPAN SEMUA PERUBAHAN
                 </button>
