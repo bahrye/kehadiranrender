@@ -122,9 +122,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Tambahkan getDoc atau getDocs untuk mengambil data settings
         import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    
+
         const firebaseConfig = {
             apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
             authDomain: "cekloknewversion.firebaseapp.com",
@@ -133,13 +132,13 @@
             messagingSenderId: "602084220497",
             appId: "1:602084220497:web:ac20adef8bb50acef56270"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-    
+
         let currentDate = new Date();
         let masterLogs = [];
-        // 1. Ubah variabel ketOptions menjadi kosong atau default awal
+        // Keterangan diinisialisasi kosong, akan diisi dari Firebase
         let ketOptions = ["Hadir"];
 
         // UI & SECURITY LOGIC
@@ -157,25 +156,16 @@
 
         // CORE FUNCTIONS
         window.handleTimeInput = (el) => {
-            // Hanya ambil angka
             let val = el.value.replace(/\D/g, '');
-            
-            // Batasi maksimal 4 angka (HHMM)
             val = val.substring(0, 4);
-            
-            // Validasi Logika Jam
             if (val.length >= 2) {
                 let hour = parseInt(val.substring(0, 2));
-                if (hour > 23) val = '23' + val.substring(2); // Maksimal jam 23
+                if (hour > 23) val = '23' + val.substring(2);
             }
-            
-            // Validasi Logika Menit
             if (val.length >= 4) {
                 let minute = parseInt(val.substring(2, 4));
-                if (minute > 59) val = val.substring(0, 2) + '59'; // Maksimal menit 59
+                if (minute > 59) val = val.substring(0, 2) + '59';
             }
-        
-            // Format tampilan ke HH:MM tanpa mengunci tombol hapus
             if (val.length > 2) {
                 el.value = val.substring(0, 2) + ":" + val.substring(2);
             } else {
@@ -185,21 +175,37 @@
         
         window.formatTimeBlur = (el) => {
             if (!el.value) return;
-            
-            // Pecah berdasarkan titik dua
             let parts = el.value.split(':');
             let h = parts[0] || "";
             let m = parts[1] || "";
-        
-            // Lengkapi digit (Auto-fill)
             if (h !== "") h = h.padStart(2, '0');
             if (m !== "") m = m.padEnd(2, '0');
-            
             if (h === "") h = "00";
             if (m === "") m = "00";
-        
             el.value = `${h}:${m}`;
         };
+
+        // Fungsi baru untuk mengambil list keterangan dinamis
+        async function fetchKetOptions() {
+            try {
+                const docRef = doc(db, "settings", "keterangan");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.list && Array.isArray(data.list)) {
+                        ketOptions = data.list;
+                    }
+                } else {
+                    // Default jika data belum ada di Firebase
+                    const defaultKet = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
+                    await setDoc(docRef, { list: defaultKet });
+                    ketOptions = defaultKet;
+                }
+            } catch (error) {
+                console.error("Gagal fetch keterangan:", error);
+                ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
+            }
+        }
 
         document.getElementById('btnLogin').onclick = async () => {
             const u = document.getElementById('username').value, p = passwordInput.value;
@@ -217,32 +223,6 @@
                 } else alert("Login Gagal!");
             } catch (e) { toggleLoading(false); alert("Error!"); }
         };
-
-        // 2. Tambahkan Fungsi untuk mengambil list keterangan dari Firebase
-        async function fetchKetOptions() {
-            try {
-                // Mengambil dokumen 'keterangan' dari koleksi 'settings'
-                const docRef = doc(db, "settings", "keterangan");
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    // Asumsi di Firestore strukturnya: { list: ["Hadir", "Sakit", "Izin", ...] }
-                    const data = docSnap.data();
-                    if (data.list && Array.isArray(data.list)) {
-                        ketOptions = data.list;
-                    }
-                } else {
-                    // Jika dokumen belum ada, buat default agar tidak kosong
-                    const defaultKet = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
-                    await setDoc(docRef, { list: defaultKet });
-                    ketOptions = defaultKet;
-                }
-            } catch (error) {
-                console.error("Gagal mengambil data keterangan:", error);
-                // Fallback default jika error
-                ketOptions = ["Hadir", "Sakit", "Izin"];
-            }
-        }
 
         function renderTable() {
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
@@ -268,19 +248,30 @@
                     else if(log.keterangan?.includes("Libur")) stats.libur++;
                 }
         
-                // 3. Bagian render SELECT sudah otomatis menggunakan ketOptions terbaru
                 tbody.innerHTML += `
                     <tr class="${isSun ? 'bg-red-50/50' : 'hover:bg-slate-50'}">
                         <td class="p-4 font-bold col-tgl ${isSun ? 'text-red-500' : ''}">${d} <span class="text-[10px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
                         <td class="p-2 col-jam">
-                            <input type="text" placeholder="HH:MM" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.masuk || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-m w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
+                            <input type="text" 
+                                placeholder="HH:MM" 
+                                oninput="handleTimeInput(this)" 
+                                onblur="formatTimeBlur(this)" 
+                                value="${log.masuk || ''}" 
+                                ${isSun || isOff ? 'disabled' : ''} 
+                                class="row-m w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
                         <td class="p-2 col-jam">
-                            <input type="text" placeholder="HH:MM" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.pulang || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-p w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
+                            <input type="text" 
+                                placeholder="HH:MM" 
+                                oninput="handleTimeInput(this)" 
+                                onblur="formatTimeBlur(this)" 
+                                value="${log.pulang || ''}" 
+                                ${isSun || isOff ? 'disabled' : ''} 
+                                class="row-p w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
                         <td class="p-2 col-ket">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs">
-                                ${ketOptions.map(o => `<option value="${o}" ${log.keterangan == o ? 'selected' : (o === 'Hadir' ? 'selected' : '')}>${o}</option>`).join('')}
+                                ${ketOptions.map(o => `<option value="${o}" ${log.keterangan === o ? 'selected' : (o === 'Hadir' && !log.keterangan ? 'selected' : '')}>${o}</option>`).join('')}
                             </select>
                         </td>
                         <td class="p-2 col-aks">
@@ -295,10 +286,7 @@
         // PDF TABULASI FINGERPRINT FORMAT
         window.downloadTabulasiDept = async () => {
             const { jsPDF } = window.jspdf;
-            // Orientasi Landscape A4 agar muat 31 kolom
             const doc = new jsPDF('l', 'mm', 'a4');
-            
-            // Ambil data unit dari localStorage (seperti di kode Firebase Anda sebelumnya)
             const sekolahData = localStorage.getItem('sekolah');
             const unitTarget = sekolahData ? JSON.parse(sekolahData)[0] : "";
             
@@ -312,7 +300,6 @@
             toggleLoading(true);
         
             try {
-                // 1. Ambil Semua Guru yang satu unit/departemen dari Firestore
                 const qUser = query(collection(db, "users"), where("role", "==", "Guru"));
                 const snapUser = await getDocs(qUser);
                 let deptGurus = [];
@@ -323,45 +310,35 @@
                     }
                 });
         
-                // Urutkan Guru berdasarkan ID (numerik)
                 deptGurus.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
         
-                // 2. Ambil Semua Log Presensi dari Firestore
                 const snapPresensi = await getDocs(collection(db, "presensi"));
                 let allLogs = [];
                 snapPresensi.forEach(d => allLogs.push(d.data()));
         
-                // --- KONSTRUKSI PDF ---
-                
-                // Judul Laporan
                 doc.setFontSize(14).setFont("helvetica", "bold").text("Lap. Detail Absensi", 148, 12, { align: "center" });
                 doc.setFontSize(8).setFont("helvetica", "normal");
                 doc.text(`Waktu Absensi ${y}-${(m+1).toString().padStart(2,'0')}-01 ~ ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 15, 20);
                 doc.text(`Tabulansi ${y}-${(m+1).toString().padStart(2,'0')}-${daysInMonth}`, 148, 20, { align: "center" });
         
-                // Header Tabel: Angka Tanggal 1 s/d 31
                 const tableHeader = ['']; 
                 for (let i = 1; i <= 31; i++) tableHeader.push(i.toString());
         
                 const tableRows = [];
                 deptGurus.forEach((guru) => {
-                    // BARIS A: Baris Info (ID, Nama, Dept) sesuai posisi kolom fingerprint
                     const infoRow = new Array(32).fill("");
                     infoRow[0] = "ID:";
-                    infoRow[2] = guru.id; // Nilai ID di kolom 3 (indeks 2)
+                    infoRow[2] = guru.id;
                     infoRow[8] = "Nama:";
-                    infoRow[10] = guru.nama; // Nilai Nama di kolom 11 (indeks 10)
+                    infoRow[10] = guru.nama;
                     infoRow[18] = "Dept.:";
-                    infoRow[20] = unitTarget; // Nilai Dept di kolom 21 (indeks 20)
+                    infoRow[20] = unitTarget;
                     tableRows.push(infoRow);
         
-                    // BARIS B: Baris Jam (Masuk di atas, Pulang di bawah)
                     const dataRow = [''];
                     for (let d = 1; d <= 31; d++) {
                         if (d > daysInMonth) { dataRow.push(""); continue; }
-                        
                         const dateKey = `${y}-${(m+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-                        // Cari log berdasarkan username guru dan tanggal
                         const log = allLogs.find(l => l.username === guru.id && l.tanggal === dateKey);
                         
                         if (log) {
@@ -379,7 +356,6 @@
                     tableRows.push(dataRow);
                 });
         
-                // Render Tabel dengan jspdf-autotable
                 doc.autoTable({
                     startY: 25,
                     head: [tableHeader],
@@ -398,17 +374,14 @@
                     columnStyles: { 0: { cellWidth: 5 } },
                     margin: { left: 10, right: 10 },
                     didParseCell: function(data) {
-                        // Menghilangkan garis vertikal pada baris Info Guru agar terlihat menyatu
                         if (data.row.index % 2 === 0) {
                             data.cell.styles.fillColor = [255, 255, 255];
                             data.cell.styles.fontStyle = 'bold';
                             data.cell.styles.halign = 'left';
-                            // Hilangkan border kanan kecuali pada kolom terakhir
                             if (data.column.index < 31) {
                                 data.cell.styles.lineWidth = { top: 0.1, right: 0, bottom: 0.1, left: 0 };
                             }
                         }
-                        // Memberikan garis bawah tebal pada baris Jam sebagai pemisah antar Guru
                         if (data.row.index % 2 !== 0) {
                             data.cell.styles.lineWidth = { top: 0.1, right: 0.1, bottom: 0.4, left: 0.1 };
                         }
@@ -419,7 +392,7 @@
         
             } catch (err) {
                 console.error(err);
-                alert("Gagal mengunduh tabulasi. Pastikan koneksi internet stabil.");
+                alert("Gagal mengunduh tabulasi.");
             }
             toggleLoading(false);
         };
@@ -467,17 +440,16 @@
         
         async function init() {
             if(!localStorage.getItem('user_ceklok')) return;
-            
             toggleLoading(true);
-            // Ambil list keterangan dulu sebelum render tabel
+            
+            // Ambil keterangan dulu baru render sisa UI
             await fetchKetOptions();
             
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('timesheetSection').classList.remove('hidden');
             
             onSnapshot(query(collection(db, "presensi"), where("username", "==", localStorage.getItem('user_ceklok'))), (s) => {
-                masterLogs = []; 
-                s.forEach(d => masterLogs.push(d.data()));
+                masterLogs = []; s.forEach(d => masterLogs.push(d.data()));
                 renderTable();
                 toggleLoading(false);
             });
