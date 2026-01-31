@@ -151,7 +151,7 @@
                 <h3 id="summaryTitle" class="text-2xl font-bold">Ringkasan Bulanan</h3>
                 <button onclick="document.getElementById('modalSummary').classList.add('hidden')" class="text-slate-400 text-3xl">&times;</button>
             </div>
-            <div id="globalSummaryContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="globalSummaryContent" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6"></div>
         </div>
     </div>
 
@@ -285,25 +285,35 @@
                 const alpa = Math.max(0, workDays - hadir - libur);
                 const presentase = workDays > 0 ? Math.round((hadir / (workDays - libur)) * 100) : 0;
 
+                // Ganti bagian pembuatan kartu di dalam loop sortedGurus.forEach
                 container.innerHTML += `
-                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                        <div class="flex items-center gap-4 mb-5">
-                            <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl">👤</div>
-                            <div>
-                                <h4 class="font-bold text-slate-800 leading-tight">${guru.nama}</h4>
-                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-1">ID: ${guru.id}</p>
+                    <div class="bg-white p-4 md:p-5 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg">👤</div>
+                            <div class="overflow-hidden">
+                                <h4 class="font-bold text-slate-800 leading-tight text-sm md:text-base truncate">${guru.nama}</h4>
+                                <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">ID: ${guru.id}</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="bg-blue-50/50 p-3 rounded-2xl text-center"><p class="text-blue-600 font-black text-lg">${workDays}</p><p class="text-[9px] text-blue-400 uppercase font-bold">Hari</p></div>
-                            <div class="bg-emerald-50/50 p-3 rounded-2xl text-center"><p class="text-emerald-600 font-black text-lg">${hadir}</p><p class="text-[9px] text-emerald-400 uppercase font-bold">Hadir</p></div>
-                            <div class="bg-rose-50 p-3 rounded-2xl text-center"><p class="text-rose-600 font-black text-lg">${alpa}</p><p class="text-[9px] text-rose-400 uppercase font-bold">Alpa</p></div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-blue-50/50 p-2 rounded-xl text-center">
+                                <p class="text-blue-600 font-black text-base">${workDays}</p>
+                                <p class="text-[8px] text-blue-400 uppercase font-bold">Hari</p>
+                            </div>
+                            <div class="bg-emerald-50/50 p-2 rounded-xl text-center">
+                                <p class="text-emerald-600 font-black text-base">${hadir}</p>
+                                <p class="text-[8px] text-emerald-400 uppercase font-bold">Hadir</p>
+                            </div>
+                            <div class="bg-rose-50 p-2 rounded-xl text-center">
+                                <p class="text-rose-600 font-black text-base">${alpa}</p>
+                                <p class="text-[8px] text-rose-400 uppercase font-bold">Alpa</p>
+                            </div>
                         </div>
-                        <div class="mt-5 pt-4 border-t border-slate-50 flex justify-between items-center">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Produktivitas</span>
-                            <span class="text-sm font-black ${presentase > 80 ? 'text-emerald-500' : 'text-amber-500'}">${presentase}%</span>
+                        <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Produktivitas</span>
+                            <span class="text-xs font-black ${presentase > 80 ? 'text-emerald-500' : 'text-amber-500'}">${presentase}%</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div class="w-full bg-slate-100 h-1 rounded-full mt-1.5 overflow-hidden">
                             <div class="h-full ${presentase > 80 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width: ${presentase}%"></div>
                         </div>
                     </div>`;
