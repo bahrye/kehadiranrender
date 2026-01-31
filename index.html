@@ -122,8 +122,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // Tambahkan getDoc atau getDocs untuk mengambil data settings
         import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyDT8CyigYFfoVg3DXunOq7pKvbMpTZkQ98",
             authDomain: "cekloknewversion.firebaseapp.com",
@@ -132,13 +133,14 @@
             messagingSenderId: "602084220497",
             appId: "1:602084220497:web:ac20adef8bb50acef56270"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
+    
         let currentDate = new Date();
         let masterLogs = [];
-        let ketOptions = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
+        // 1. Ubah variabel ketOptions menjadi kosong atau default awal
+        let ketOptions = ["Hadir"];
 
         // UI & SECURITY LOGIC
         const passwordInput = document.getElementById('password');
@@ -216,6 +218,32 @@
             } catch (e) { toggleLoading(false); alert("Error!"); }
         };
 
+        // 2. Tambahkan Fungsi untuk mengambil list keterangan dari Firebase
+        async function fetchKetOptions() {
+            try {
+                // Mengambil dokumen 'keterangan' dari koleksi 'settings'
+                const docRef = doc(db, "settings", "keterangan");
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    // Asumsi di Firestore strukturnya: { list: ["Hadir", "Sakit", "Izin", ...] }
+                    const data = docSnap.data();
+                    if (data.list && Array.isArray(data.list)) {
+                        ketOptions = data.list;
+                    }
+                } else {
+                    // Jika dokumen belum ada, buat default agar tidak kosong
+                    const defaultKet = ["Hadir", "Sakit", "Izin", "Cuti", "Libur Semester", "Libur Nasional"];
+                    await setDoc(docRef, { list: defaultKet });
+                    ketOptions = defaultKet;
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data keterangan:", error);
+                // Fallback default jika error
+                ketOptions = ["Hadir", "Sakit", "Izin"];
+            }
+        }
+
         function renderTable() {
             const m = currentDate.getMonth(), y = currentDate.getFullYear();
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -240,31 +268,19 @@
                     else if(log.keterangan?.includes("Libur")) stats.libur++;
                 }
         
+                // 3. Bagian render SELECT sudah otomatis menggunakan ketOptions terbaru
                 tbody.innerHTML += `
                     <tr class="${isSun ? 'bg-red-50/50' : 'hover:bg-slate-50'}">
                         <td class="p-4 font-bold col-tgl ${isSun ? 'text-red-500' : ''}">${d} <span class="text-[10px] text-slate-400">(${['Min','Sen','Sel','Rab','Kam','Jum','Sab'][dateObj.getDay()]})</span></td>
                         <td class="p-2 col-jam">
-                            <input type="text" 
-                                placeholder="HH:MM" 
-                                oninput="handleTimeInput(this)" 
-                                onblur="formatTimeBlur(this)" 
-                                value="${log.masuk || ''}" 
-                                ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-m w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
+                            <input type="text" placeholder="HH:MM" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.masuk || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-m w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
                         <td class="p-2 col-jam">
-                            <input type="text" 
-                                placeholder="HH:MM" 
-                                oninput="handleTimeInput(this)" 
-                                onblur="formatTimeBlur(this)" 
-                                value="${log.pulang || ''}" 
-                                ${isSun || isOff ? 'disabled' : ''} 
-                                class="row-p w-20 p-2 border rounded-xl text-center text-xs placeholder:text-slate-300 ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
+                            <input type="text" placeholder="HH:MM" oninput="handleTimeInput(this)" onblur="formatTimeBlur(this)" value="${log.pulang || ''}" ${isSun || isOff ? 'disabled' : ''} class="row-p w-20 p-2 border rounded-xl text-center text-xs ${isSun || isOff ? 'bg-slate-100' : 'bg-white'}">
                         </td>
                         <td class="p-2 col-ket">
                             <select onchange="handleStatus(this)" ${isSun ? 'disabled' : ''} class="row-k w-full p-2 border rounded-xl text-xs">
-                                <option value="Hadir">Hadir</option>
-                                ${ketOptions.map(o => o !== 'Hadir' ? `<option value="${o}" ${log.keterangan == o ? 'selected' : ''}>${o}</option>` : '').join('')}
+                                ${ketOptions.map(o => `<option value="${o}" ${log.keterangan == o ? 'selected' : (o === 'Hadir' ? 'selected' : '')}>${o}</option>`).join('')}
                             </select>
                         </td>
                         <td class="p-2 col-aks">
@@ -449,13 +465,21 @@
         document.getElementById('prevBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderTable(); };
         document.getElementById('nextBtn').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderTable(); };
         
-        function init() {
+        async function init() {
             if(!localStorage.getItem('user_ceklok')) return;
+            
+            toggleLoading(true);
+            // Ambil list keterangan dulu sebelum render tabel
+            await fetchKetOptions();
+            
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('timesheetSection').classList.remove('hidden');
+            
             onSnapshot(query(collection(db, "presensi"), where("username", "==", localStorage.getItem('user_ceklok'))), (s) => {
-                masterLogs = []; s.forEach(d => masterLogs.push(d.data()));
+                masterLogs = []; 
+                s.forEach(d => masterLogs.push(d.data()));
                 renderTable();
+                toggleLoading(false);
             });
         }
         init();
